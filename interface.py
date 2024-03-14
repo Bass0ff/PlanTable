@@ -1,169 +1,239 @@
-import sqlite3
+import requests
 import sys
-from xml.etree.ElementPath import findtext
+
 from PySide2.QtCore import Qt, QSize, QDate
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QPalette, QColor
+
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_SECTION, WD_ORIENT
+from docx.shared import Pt, Mm, Cm
+from datetime import datetime
 
-#
-
-#СПИСОК ИЗМЕНЕНИЙ С КОНЦА ДЕКАБРЯ
-#-Из-за непостоянности концепции "плана" решил убрать разделение вовсе, оставив саму таблицу как есть целиком.
-#-Увеличил шрифт в приложении
-#-Обобщил функции добавления и удаления строк в таблицах, а также считывания строк из БД
-#-Встретился с завучем Лицея №1:
-#   -Узнал, что списков мероприятий толком нет и не бывает в принципе, так как о большей части всего в таблице 
-#       становится известно непосредственно в течение года, а не в его начале.
-#   -Убрал несколько, как оказалось, лишних столбцов в таблицах
-#   -Получил списки, которые по словам самого завуча можно было знать заранее
-#-Добавил к некоторым спискам возможность редактирования и предусмотрел считывание уникальных записей из БД
-#-Пришёл к идее хранить структуры таблиц программы в виде словаря
-#-Сделал приблизительный вариант бокового меню навигации. Переход осуществляется к разделам, а не к таблицам по отдельности. 
-#-Сделал переходы по всем таблицам и реализовал их полную работу
-
-#TODO:
-
-#
-
-#   Добавить авторизацию (?перед открытием программы?)
-#   Заголовки для столбцов
-#   Доделать визуал для начальных менюшек
-#   Нормальный ввод для классов: с буквой от А до В и с числом от 5 до 11
-#   Настройку ширины бокового меню ..?
-#   !Вынести доп.поля из третьей таблицы - они рушат разметку!
-#   **Сделать режим настройки для потенциального изменения структуры таблиц в будущем**
-
-tables = {  #Глобальное описание структур таблиц плана
-    "table-01": ["part1",   #start, end, result, name, theme, class, form
-                ["Date", (0,1)],
-                ["EList", "Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика", (6,)],
-                ["SText", (5,)],
-                ["Text", (4,)],
-                ["Text", (3,)],
-                ["Check", (2,)]],
-    "table-02": ["part1",
-                ["Date", (0,1)],
-                ["EList", "Заседание Кафедры", "Педсовет", "Педагогическое чтение", "Конференция", "Олимпиада", "Конкурс", "Выставка", "Предметная неделя", (3,)],
-                ["EList", "Очная", "Заочная", "Дистанционная", (6,)],
-                ["List", "Протокол", "Выписка", "План", "Отзыв", (2,)]],
-
-    "table-03": ["part2",   #start, end, result, name, place, worked_as, level
-                ["Text", (3,)],
-                ["Text", (2,)],
-                ["Text", (4,)],
-                ["Date", (0,1)]],
-    "table-04": ["part2",
-                ["Text", (3,)],
-                ["Text", (5,)],
-                ["Date", (0, 1)],
-                ["Text", (2,)]],
-    "table-05": ["part2",
-                ["Date", (0,1)],
-                ["Text", (3,)],
-                ["List", "судья", "эксперт", "жюри", (5,)],
-                ["List", "муниципальный", "региональный", "всероссийский", "международный", (6,)]],
-
-    "table-06": ["part3",   #start(0), end1, general.result2, name3, theme4, form5, place6, worked_as7, level8, time9, organizator10, part3.result11, link12
-                ["Date", (0,1)],
-                ["Text", (4,)],   #
-                ["Text", (6,)],   #
-                ["Text", (9,)],   #
-                ["Text", (11,)],   #
-                ["EList", "очный", "дистанционный", "очный, с применением дистанционных технологий", (5,)]],
-    "table-07": ["part3",
-                ["Date", (0,1)],
-                ["Text", (4,)],
-                ["Text", (10,)],
-                ["Text", (5,)],
-                ["Text", (9,)],
-                ["Text", (2,)]],
-    "table-08": ["part3",   #start(0), end1, general.result2, name3, theme4, form5, place6, worked_as7, level8, time9, organizator10, part3.result11, link12
-                ["Date", (0,1)],
-                ["Text", (3,)],   #name
-                ["List", "школьный", "муниципальный", "региональный", "всероссийский", (8,)], #level
-                ["List", "очная", "заочная", "дистанционная", (5,)],  #form
-                ["List", "муниципальный", "региональный", "всероссийский", "международный", (6,)],    #place
-                ["Text", (2,)],   #result
-                ["Text", (11,)],   #part3.result
-                ["Text", (12,)]],  #link
-    "table-09": ["part3",
-                ["Date", (0,1)],
-                ["Text", (3,)],   #name
-                ["List", "очная", "заочная", "дистанционная", (5,)],  #form
-                ["List", "муниципальный", "региональный", "всероссийский", "международный", (8,)],    #level
-                ["Text", (4,)],   #theme
-                ["EList", "выступление", "публикация", "мастер-класс", (7,)], #worked_as
-                ["EList", "статья", "метод", "разработка", (11,)],    #part3.result
-                ["Text", (2,)],   #result
-                ["Text", (12,)]],  #link
-    "table-10": ["part3",   #start(0), end1, general.result2, name3, theme4, form5, place6, worked_as7, level8, time9, organizator10, part3.result11, link12
-                ["Date", (0,1)],
-                ["Text", (3,)],
-                ["Text", (2,)]],
-    "table-11": ["part3",
-                ["Date", (0,1)],
-                ["EList", "Школа Современного Педагога", "конференция", "семинар", "консультация", "стажировочная площадка", "урок коллег из другой школы", (3,)],
-                ["List", "муниципальный", "региональный", "всероссийский", "международный", (8,)],
-                ["List", "организатор", "участник", (7,)],
-                ["Text", (6,)],
-                ["Text", (4,)],
-                ["Text", (10,)]],
-    "table-12": ["part3",
-                ["Date", (0,1)],
-                ["EList", "Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика", (5,)],
-                ["Text", (6,)],
-                ["Text", (4,)],
-                ["Text", (3,)]],
-
-    "table-13": ["part4",   #start, end, general.result, general.name, theme, class, level, part4.result, part4.name
-                ["Date", (0,1)],
-                ["Text", (3,)],
-                ["Text", (8,)],
-                ["EList", "отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный", (6,)],
-                ["Text", (2,)]],
-    "table-14": ["part4",
-                ["Date", (0,1)],
-                ["Text", (3,)],
-                ["Text", (8,)],
-                ["EList", "отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный", (6,)],
-                ["Text", (2,)]],
-    "table-15": ["part4",
-                ["Date", (0,1)],
-                ["Text", (3,)],
-                ["Text", (4,)],
-                ["Text", (8,)],
-                ["EList", "отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный", (6,)],
-                ["Text", (2,)]],
-    "table-16": ["part4",
-                ["Text", (3,)],
-                ["Date", (0,)],
-                ["Date", (1,)],
-                ["Text", (8,)]],  
-    "table-17": ["part4",
-                ["Text", (3,)],
-                ["Date", (0,)],
-                ["Date", (1,)],
-                ["Text", (8,)]],
+tables = {  #Шаблоны для генерации страниц заполнения таблиц
+    "t-01": {
+        'name': "Проведение открытых уроков, классных часов, предметных недель, других мероприятий",
+        'fields': [
+            ["Дата", "Date"],
+            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика")],
+            ["Класс", "SText"],
+            ["Тема", "Text"],
+            ["Цель", "Text"],
+            ["Отметка", "Check"]
+        ],
+        'type': 'oc'    #open_class = открытый урок
+    },
+    "t-02": {
+        'name': "Участие в подготовке и проведении лицейских мероприятий",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "EList", ("Заседание Кафедры", "Педсовет", "Педагогическое чтение", "Конференция", "Олимпиада", "Конкурс", "Выставка", "Предметная неделя")],
+            ["Форма участия", "EList", ("Очная", "Заочная", "Дистанционная")],
+            ["Документ", "List", ("Протокол", "Выписка", "План", "Отзыв", "Приказ")]
+        ],
+        'type': 'se'    #self_education = самообразование
+    },
+    "t-03": {
+        'name': "Запланированные мероприятия",
+        'fields': [
+            ["Мероприятие", "Text"],
+            ["Результат", "Text"],
+            ["Место проведения", "Text"],
+            ["Дата", "Date"]
+        ],
+        'type': 'se'    #self_education = самообразование
+    },
+    "t-04": {
+        'name': "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок",
+        'fields': [
+            ["Название", "Text"],
+            ["Личное участие", "Text"],
+            ["Дата", "Date"],
+            ["Результат", "Text"]
+        ],
+        'type': 'et'    #ExperTise = экспертная деятельность
+    },
+    "t-05": {
+        'name': "Экспертная Деятельность",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Вид деятельности", "List", ("судья", "эксперт", "жюри")],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")]
+        ],
+        'type': 'et'    #ExperTise = экспертная деятельность
+    },
+    "t-06": {
+        'name': "Обучение на курсах повышения квалификации, посещение опорных школ и др.",
+        'fields': [
+            ["Дата", "Date"],
+            ["Тема", "Text"],
+            ["Учреждение", "Text"],
+            ["Часы", "Number", 0, 500],
+            ["Документ", "Text"],
+            ["Формат", "EList", ("очный", "дистанционный", "очный, с применением дистанционных технологий")]
+        ],
+        'type': 'cr'    #CouRse = прохождение курсов и пр.
+    },
+    "t-07": {
+        'name': "Участие в сертифицированные вебинарах, семинарах и др.",
+        'fields': [
+            ["Дата", "Date"],
+            ["Тема", "Text"],
+            ["Организатор", "Text"],
+            ["Формат", "Text"],
+            ["Часы", "Number", 0, 500],
+            ["Документ", "Text"]
+        ],
+        'type': 'cr'    #CouRse = прохождение курсов и пр.
+    },
+    "t-08": {
+        'name': "Участие в конкурсах профессионального мастерства",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Уровень", "List", ("школьный", "муниципальный", "региональный", "всероссийский")],
+            ["Формат", "List", ("очная", "заочная", "дистанционная")],
+            ["Этап", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Результат", "Text"],
+            ["Документ", "Text"],
+            ["Ссылка", "Text"]
+        ],
+        'type': 'ec'    #ExperienCe = предоставление опыта
+    },
+    "t-09": {
+        'name': "Обобщение и представление опыта работы",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Форма участия", "List", ("очная", "заочная", "дистанционная")],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Тема", "Text"],
+            ["Вид деятельности", "EList", ("выступление", "публикация", "мастер-класс")],
+            ["Публикация", "EList", ("статья", "метод", "разработка")],
+            ["Орган", "Text"],
+            ["Ссылка", "Text"]
+        ],
+        'type': 'ec'    #ExperienCe = предоставление опыта
+    },
+    "t-10": {
+        'name': "Участие в диагностике профессиональных дефицитов/предметных компетенций",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Результат", "Text"]
+        ],
+        'type': 'et'    #ExperTise = экспертная деятельность
+    },
+    "t-11": {
+        'name': "Участие во внешкольных мероприятий",
+        'fields': [
+            ["Дата", "Date"],
+            ["Тип", "EList", ("Школа Современного Педагога", "конференция", "семинар", "консультация", "стажировочная площадка", "урок коллег из другой школы")],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Статус", "List", ("организатор", "участник")],
+            ["Место проведения", "Text"],
+            ["Тема", "Text"],
+            ["Организатор", "Text"]
+        ],
+        'type': 'cr'    #CouRse = прохождение курсов и пр.
+    },
+    "t-12": {
+        'name': "Посещение уроков, кл.часов, мероприятий у коллег в школе",
+        'fields': [
+            ["Дата", "Date"],
+            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика")],
+            ["Класс", "SText"],
+            ["Тема", "Text"],
+            ["Цель", "Text"]
+        ],
+        'type': 'oc'    #open_class = открытый урок
+    },
+    "t-13": {
+        'name': "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Обучающийся", "Text"],
+            ["Класс", "SText"],
+            ["Этап", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Результат", "Text"],
+            ["Документ", "Text"]
+        ],
+        'type': 'sw'    #student_work = работа с учениками
+    },
+    "t-14": {
+        'name': "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др.",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Обучающийся", "Text"],
+            ["Класс", "SText"],
+            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Результат", "Text"],
+            ["Документ", "Text"]
+        ],
+        'type': 'sw'    #student_work = работа с учениками
+    },
+    "t-15": {
+        'name': "Участие обучающихся в соревнованиях профессиональных компетенций",
+        'fields': [
+            ["Дата", "Date"],
+            ["Название", "Text"],
+            ["Компетенция", "Text"],
+            ["Обучающийся", "Text"],
+            ["Класс", "SText"],
+            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
+            ["Результат", "Text"],
+            ["Документ", "Text"]
+        ],
+        'type': 'sw'    #student_work = работа с учениками
+    },
+    "t-16": {
+        'name': "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ",
+        'fields': [
+            ["Название", "Text"],
+            ["Дата", "Date"],
+            ["Обучающийся", "Text"]
+        ],
+        'type': 'sw'    #student_work = работа с учениками
+    },
+    "t-17": {
+        'name': "Участие в профильных сменах",
+        'fields': [
+            ["Название", "Text"],
+            ["Дата", "Date"],
+            ["Обучающийся", "Text"]
+        ],
+        'type': 'sw'    #student_work = работа с учениками
+    }
 }
 
 docTables = [ #Шаблоны для заполнения документов
-    ["Проведение открытых уроков, классных часов, предметных недель, других мероприятий", ["Дата", "Предмет", "Класс", "тема", "Цель, для какой цели проводится", "Отметка о выполнении"], [0, 6, 5, 4, 3, 2]],
-    ["Участие в подготовке и проведении лицейских мероприятий", ["Дата", "Название мероприятия", "Форма участия", "Вид сданной документации"], [0, 3, 6, 2]],
-    ["Запланированные мероприятия", ["Запланированные мероприятия", "Конкретный результат", "Место проведения", "Дата"], [3, 2, 4, 0]],
-    ["Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок", ["Название творческой группы, инновационной/стажировочной площадки", "Личное участие в работе группы, площадки", "Дата", "Результат"], [3, 5, 0, 2]],
-    ["Экспертная Деятельность", ["Дата", "Название мероприятия", "Вид экспертной детельности", "Уровень"], [0, 3, 5, 6]],
-    ["Обучение на курсах повышения квалификации, посещение опорных школ и др.", ["Дата обучения", "Тема курсовой подготовки", "Базовое учреждение обучения (по удостоверению)", "Количество часов", "Документ об окончании обучения", "Формат обучения"], [0, 4 ,6, 9, 11]],
-    ["Участие в сертифицированные вебинарах, семинарах и др.", ["Дата", "Тема мероприятия", "Организатор мероприятия", "Формат обучения", "Количество часов", "Документ"], [0, 4, 10, 5, 9, 2]],
-    ["Участие в конкурсах профессионального мастерства", ["Дата", "Название", "Уровень", "Формат", "Этап", "Результат участия", "Документ", "Активная ссылка на размещение материалов в сети интернет"], [0, 3, 8, 5, 6, 2, 11, 12]],
-    ["Обобщение и представление опыта работы", ["Дата", "Название мероприятия", "Форма участия", "Уровень", "Тема представления опыта", "Выступление, публикация, мастер-класс", "Вид публикации", "Название органа, издания, исходные данные", "Активная ссылка на размещение материалов в сети интернет"], [0, 3, 5, 8, 4, 7, 11, 2, 12]],
-    ["Участие в диагностике профессиональных дефицитов/предметных компетенций", ["Дата", "Название диагностики", "Результат"], [0, 3, 2]],
-    ["Участие во внешкольных мероприятий", ["Дата", "Тип мероприятия", "Уровень", "Статус", "Место проведения", "Тема мероприятия", "Кто проводил"], [0, 3, 8, 7, 6, 4, 10]],
-    ["Посещение уроков, кл.часов, мероприятий у коллег в школе", ["Дата", "Предмет", "Класс", "Тема", "Цель проведения, для какой категории проводится"], [0, 5, 6, 4, 3]],
-    ["Участие обучающихся в конкурсных мероприятиях, входящих в перечень, утвержденный приказом Министерcтва науки и высшего образования РФ", ["Дата", "Наименование мероприятия", "ФИ обучающегося, класс", "Этап олимпиады", "Результат уастия, подтверждающий документ"], [0, 3, 8, 6, 2]],
-    ["Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др.", ["Дата", "Наименование мероприятия", "ФИ обучающегося или группа учеников, класс", "Уровень", "Результат участия, подтверждающий документ"], [0, 3, 8, 6, 2]],
-    ["Участие обучающихся в соревнованиях профессиональных компетенций", ["Дата", "Наименование соревнований", "Название компетенции", "ФИ обучающегося или группа учеников, класс", "Уровень", "Результат участия, подтверждающий документ"], [0, 3, 4, 8, 6, 2]],
-    ["Участие обучающихся в программах образовательного фонда «Талант и успех» (образовательные центры «Сириус» и «Персей»)", ["Название программы", "Сроки прохождения", "ФИ обучающегося", "Название смены", "Сроки", "ФИ обучающегося (участника смены)"], [3, 0, 8, 12, 9, 17]]
+    [   "Учебно-методическая и организационно-методическая работа",
+        ["Проведение открытых уроков, классных часов, предметных недель, других мероприятий", ["Дата", "Предмет", "Класс", "тема", "Цель, для какой цели проводится", "Отметка о выполнении"], [0, 6, 5, 4, 3, 2]],
+        ["Участие в подготовке и проведении лицейских мероприятий", ["Дата", "Название мероприятия", "Форма участия", "Вид сданной документации"], [0, 3, 6, 2]],
+    ],
+    [   "Научно-методическая и исследовательская (экспериментальная) работа",
+        ["Тема самообразования", ["Запланированные мероприятия", "Конкретный результат", "Место проведения", "Дата"], [3, 2, 4, 0]],
+        ["Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок", ["Название творческой группы, инновационной/стажировочной площадки", "Личное участие в работе группы, площадки", "Дата", "Результат"], [3, 5, 0, 2]],
+        ["Экспертная Деятельность", ["Дата", "Название мероприятия", "Вид экспертной детельности", "Уровень"], [0, 3, 5, 6]],
+    ],
+    [   "Повышение квалификации",
+        ["Обучение на курсах повышения квалификации, посещение опорных школ и др.", ["Дата обучения", "Тема курсовой подготовки", "Базовое учреждение обучения (по удостоверению)", "Количество часов", "Документ об окончании обучения", "Формат обучения"], [0, 4 ,6, 9, 11]],
+        ["Участие в сертифицированные вебинарах, семинарах и др.", ["Дата", "Тема мероприятия", "Организатор мероприятия", "Формат обучения", "Количество часов", "Документ"], [0, 4, 10, 5, 9, 2]],
+        ["Участие в конкурсах профессионального мастерства", ["Дата", "Название", "Уровень", "Формат", "Этап", "Результат участия", "Документ", "Активная ссылка на размещение материалов в сети интернет"], [0, 3, 8, 5, 6, 2, 11, 12]],
+        ["Обобщение и представление опыта работы", ["Дата", "Название мероприятия", "Форма участия", "Уровень", "Тема представления опыта", "Выступление, публикация, мастер-класс", "Вид публикации", "Название органа, издания, исходные данные", "Активная ссылка на размещение материалов в сети интернет"], [0, 3, 5, 8, 4, 7, 11, 2, 12]],
+        ["Участие в диагностике профессиональных дефицитов/предметных компетенций", ["Дата", "Название диагностики", "Результат"], [0, 3, 2]],            ["Участие во внешкольных мероприятий", ["Дата", "Тип мероприятия", "Уровень", "Статус", "Место проведения", "Тема мероприятия", "Кто проводил"], [0, 3, 8, 7, 6, 4, 10]],
+        ["Посещение уроков, кл.часов, мероприятий у коллег в школе", ["Дата", "Предмет", "Класс", "Тема", "Цель проведения, для какой категории проводится"], [0, 5, 6, 4, 3]],
+    ],
+    [   "Работа с обучающимися, в том числе и внеучебная",
+        ["Участие обучающихся в конкурсных мероприятиях, входящих в перечень, утвержденный приказом Министерcтва науки и высшего образования РФ", ["Дата", "Наименование мероприятия", "ФИ обучающегося, класс", "Этап олимпиады", "Результат уастия, подтверждающий документ"], [0, 3, 8, 6, 2]],
+        ["Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др.", ["Дата", "Наименование мероприятия", "ФИ обучающегося или группа учеников, класс", "Уровень", "Результат участия, подтверждающий документ"], [0, 3, 8, 6, 2]],
+        ["Участие обучающихся в соревнованиях профессиональных компетенций", ["Дата", "Наименование соревнований", "Название компетенции", "ФИ обучающегося или группа учеников, класс", "Уровень", "Результат участия, подтверждающий документ"], [0, 3, 4, 8, 6, 2]],
+        ["Участие обучающихся в программах образовательного фонда «Талант и успех» (образовательные центры «Сириус» и «Персей»)", ["Название программы", "Сроки прохождения", "ФИ обучающегося", "Название смены", "Сроки", "ФИ обучающегося (участника смены)"], [3, 0, 8, 12, 9, 17]]
+    ]
 ]
 
 def make_rows_bold(*rows):
@@ -173,12 +243,173 @@ def make_rows_bold(*rows):
                 for run in paragraph.runs:
                     run.font.bold = True
 
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
+class RowForm(QDialog):
+    def __init__(self, root, data:list = []):    #Делаем ссылку на родителя
+        self.root = root
+        self.data = data
+        # print(data)
+        super().__init__()
+        self.setWindowTitle(f'Форма "{tables[root.name]["name"]}"')
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(600)
+        pattern = tables[root.name]["fields"]
+        self.layout = QVBoxLayout()
+        for i in range(len(pattern)):
+            row = QHBoxLayout()
+            row.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+            row.addWidget(QLabel(pattern[i][0]), stretch=1)
+            field = 0
+            match pattern[i][1]:
+                case "Text":
+                    field = QTextEdit()
+                    field.setMaximumWidth(640)
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                    if len(data) > 0:
+                        field.setText(data[i])
+                    # test.append(field)
+                case "SText":
+                    field = QLineEdit()
+                    field.setMaximumWidth(50)
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    if len(data) > 0:
+                        field.setText(data[i])
+                    # test.append(field)
+                case "Number":
+                    field = QSpinBox()
+                    field.setMinimum(pattern[i][2])
+                    field.setMaximum(pattern[i][3])
+                    field.setMaximumWidth(50)
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    if len(data) > 0:
+                        field.setValue(data[i])
+                    # test.append(field)
+                case "Date":
+                    field = QDateEdit()
+                    field.setDate(QDate.currentDate())
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    if len(data) > 0:
+                        field_data = data[i].split(".")
+                        field.setDate(QDate(int(field_data[2]),int(field_data[1]),int(field_data[0])))
+                    # test.append(field)
+                case "List":
+                    field = QComboBox()
+                    field.addItems(pattern[i][2])
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    if len(data) > 0:
+                        index = field.findText(data[i])
+                        field.setCurrentIndex(index)    
+                    # test.append(field)
+                case "EList":
+                    field = QComboBox()
+                    field.setEditable(True)
+                    field.addItems(pattern[i][2])
+                    if len(data) > 0:
+                        index = field.findText(data[i])
+                        if index == -1:
+                            field.addItem(data[i])
+                        index = field.findText(data[i])
+                        field.setCurrentIndex(index)
+                    # test.append(field)
+                case "Check":
+                    field = QCheckBox()
+                    field.setFixedHeight(30)
+                    field.setMinimumHeight(30)
+                    field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    if len(data) > 0:
+                        if data[i] == "True":
+                            field.setChecked(True)
+                    # test.append(field)
+            
+            row.addWidget(field, stretch=4)
+            self.layout.addLayout(row)
+        self.layout.addWidget(QHLine())
+        menu = QHBoxLayout()
+        save = QPushButton("ОК")
+        save.clicked.connect(self.save)
+        abort = QPushButton("Отмена")
+        abort.clicked.connect(self.abort)
+        delete = QPushButton("Удалить")
+        delete.clicked.connect(self.delete)
+        menu.addWidget(save)
+        menu.addWidget(abort)
+        menu.addWidget(delete)
+        self.layout.addLayout(menu)
+        self.setLayout(self.layout)
+
+    def data_format(self, line):
+        a = type(line)
+        if a == QDateEdit:
+            return str(line.date().day()) + "." + str(line.date().month()) + "." + str(line.date().year())
+            # return str(line.date().year()) + "-" + str(line.date().month()) + "-" + str(line.date().day())
+        elif a == QLineEdit:
+            return line.text()
+        elif a == QTextEdit:
+            return line.toPlainText()
+        elif a == QComboBox:
+            return line.currentText()
+        elif a == QCheckBox:
+            return str(line.isChecked())
+
+    def save(self):
+        rowData = []
+        for i in range(self.layout.count()-2):  #Проходимся по всем полям формы. Минус два из-за меню снизу.
+            val = self.data_format(self.layout.itemAt(i).layout().itemAt(1).widget())
+            name = self.layout.itemAt(i).layout().itemAt(0).widget().text()
+            # print(val, name)
+            if self.root.flag == "NEW":
+                rowData.append(val)
+            else:
+                self.data[i] = val
+            if (name == "Тип" or name == "Название" or name == "Мероприятие" or name == "Дата" or name == "Предмет"):
+                valab = QLabel(val)
+                valab.setStyleSheet('border: 1px solid black;')
+                if (name == "Дата"):
+                    if self.root.flag == "EDIT":
+                        self.root.curRow.itemAt(0).widget().setText(val)
+                    else:
+                        self.root.curRow.insertWidget(0, valab, stretch=1)
+                else:
+                    if self.root.flag == "EDIT":
+                        self.root.curRow.itemAt(1).widget().setText(val)
+                    else:
+                        self.root.curRow.insertWidget(1, valab, stretch=4)
+        if self.root.flag == "NEW":
+            self.root.data.append(rowData)
+        # print()
+        self.root.flag = "OK"
+        print(rowData)
+        self.close()
+
+    def abort(self):
+        self.root.flag = "ABORT"
+        self.close()
+    
+    def delete(self):
+        self.root.flag = "DEL"
+        self.close()
+
 class Table(QWidget):
-    def __init__(self, header: str, win, table_name: str):
-        self.name = table_name
-        self.widget = QWidget()
-        self.win = win
-        self.data = []
+    def __init__(self, win, table_name: str):
+        self.name = table_name      #Сохраняет название для данных из словаря
+        self.win = win              #Ссылка на родительское окно
+        self.data = []              #Словарь со строками данных в таблице
+        self.draw()                 #Отрисовка интерфейса
+        
+
+    def draw(self):
+        self.widget = QWidget()          #Основной виджет страницы
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignLeft)
         
@@ -219,11 +450,7 @@ class Table(QWidget):
         btn_menu.clicked.connect(lambda: self.win.button_pushed)
         Box_Left.addWidget(btn_menu)
 
-        # Btn_filt = QPushButton("Фильтр")
-        # Btn_filt.clicked.connect(win.button_pushed)
-        # filter.addWidget(Btn_filt)
-
-        if table_name == "table-03":
+        if self.name == "t-03":
             texts = QFormLayout()
             self.theme = QLineEdit()
             self.dateOne = QDateEdit()
@@ -236,7 +463,7 @@ class Table(QWidget):
             texts.setAlignment(Qt.AlignBottom)
             Box_Right.addLayout(texts)
 
-        lbl = QLabel(header)
+        lbl = QLabel(tables[self.name]["name"])
         font = lbl.font()
         font.setBold(True)
         font.setPointSize(14)
@@ -254,86 +481,59 @@ class Table(QWidget):
         prev.addWidget(self.btn_prev)
         Box_Right.addWidget(BoxPrev)
 
-        BoxFilter = QWidget()
-        filter = QHBoxLayout(BoxFilter)
-        filter.setAlignment(Qt.AlignLeft)
-        Btn_filt = QPushButton("Фильтр")
-        Btn_filt.clicked.connect(self.win.button_pushed)
-        filter.addWidget(Btn_filt)
-        Box_Right.addWidget(BoxFilter)
-
-        BoxTable = Color('#aaaaaa')
-        table_box = QVBoxLayout(BoxTable)
-        table_box.setAlignment(Qt.AlignTop)
-        header = QHBoxLayout()
-        header.setAlignment(Qt.AlignTop)
-        table_box.addLayout(header)
-
-        cells = QWidget()
-        cells.setMinimumSize(self.win.width()/5 * 2, self.win.height()/ 4)
-        self.table_lines = []
-        self.table_counter = 0
-        self.table = QVBoxLayout(cells)
-        self.table.setContentsMargins(0, 5, 10, 5)
-        self.table.setSizeConstraint(QLayout.SetMinAndMaxSize)
-        self.table.setAlignment(Qt.AlignTop)
-
-        self.table_num = int(table_name[-2:])
-
-        self.type = tables[table_name][0]  #Название таблицы с деталями для каждого типа таблиц
-        res = 0
-        match self.type:
-            case "part1":
-                command = f"SELECT start, end, result, name, theme, class, form FROM general INNER JOIN part1 ON general.id = part1.event_id WHERE general.tab = {self.table_num} AND general.teacher = {self.win.teach}"
-                res = self.win.cursor.execute(command)
-            case "part2":
-                command = f"SELECT start, end, result, name, place, worked_as, level FROM general INNER JOIN part2 ON general.id = part2.event_id WHERE general.tab = {self.table_num} AND general.teacher = {self.win.teach}"
-                res = self.win.cursor.execute(command)
-            case "part3":
-                command = f"SELECT start, end, result, name, theme, form, place, worked_as, level, time, organizator, document, link FROM general INNER JOIN part3 ON general.id = part3.event_id WHERE general.tab = {self.table_num} AND general.teacher = {self.win.teach}"
-                res = self.win.cursor.execute(command)
-            case "part4":
-                command = f"SELECT start, end, result, name, theme, class, level, document, pupil FROM general INNER JOIN part4 ON general.id = part4.event_id WHERE general.tab = {self.table_num} AND general.teacher = {self.win.teach}"
-                res = self.win.cursor.execute(command)
-        for line in res:
-            self.data.append(list(line))
-            print(f"HAVING DATA: {line}")
-            self.db_row(line, tables[table_name])
-
-        scroller = QScrollArea()
-        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroller.setWidgetResizable(True)
+        BoxTable = Color('#bababa')             #Фон для серого блока, где таблица лежит.
+        table_box = QVBoxLayout(BoxTable)       #Блок для хранения скроллера
+        table_box.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        
+        tableWidget = QWidget()
+        tableWidget.setMinimumSize(self.win.width()/5 * 2, self.win.height()/ 4)
+        self.rows = QVBoxLayout(tableWidget)         #Создадим внутри абстрактного виджета tableWidget блок для хранения строк. Сохраним его как параметр для дальнейшего доступа.
+        self.rows.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.rows.setContentsMargins(0, 5, 10, 5)
+        self.rows.setSizeConstraint(QLayout.SetMinAndMaxSize)
+        newRowBtn = QPushButton("Добавить строку")
+        newRowBtn.clicked.connect(self.new_row)
+        newRowBtn.setStyleSheet('border: 1px solid black;\
+                                background-color: #ffffff')
+        newRowBtn.setMinimumHeight(50)
+        newRowBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.rows.addWidget(newRowBtn)
+        # labels = [lab[0] for lab in tables[self.name]['fields']]
+        scroller = QScrollArea()                #Виджет для прокрутки содержимого
+        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)   #Вертикальный скроллер всегда видимый (но не всегда активный)
+        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)#Горизонтальный скроллер не видим никогда.
+        scroller.setWidgetResizable(True)                           
+        scroller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #Заставляем скроллер растягиваться на всё доступное место.
         scroller.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        scroller.setWidget(cells)
+        scroller.setWidget(tableWidget)
         table_box.addWidget(scroller)
         
-        menu = QVBoxLayout()
-        self.btn_new = QPushButton("+")
-        self.btn_new.clicked.connect(lambda: self.new_row(tables[table_name]))
-        font = self.btn_new.font()
-        font.setPointSize(18)
-        font.setBold(True)
-        self.btn_new.setFont(font)
-        self.btn_new.setFixedSize(50, 50)
-        menu.addWidget(self.btn_new)
-        table_box.addLayout(menu)
+        # menu = QVBoxLayout()
+        # btn_new = QPushButton("+")
+        # btn_new.clicked.connect(lambda: self.new_row())
+        # font = btn_new.font()
+        # font.setPointSize(18)
+        # font.setBold(True)
+        # btn_new.setFont(font)
+        # btn_new.setFixedSize(50, 50)
+        # menu.addWidget(btn_new)
+        # table_box.addLayout(menu)
 
         save = QWidget()
         BoxSave = QHBoxLayout(save)
-        self.SaveBtn = QPushButton("СОХРАНИТЬ")
-        self.SaveBtn.setAutoFillBackground(True)
-        self.SaveBtn.setStyleSheet("background-color: #11aa00;")
-        palette = self.SaveBtn.palette()
+        SaveBtn = QPushButton("СОХРАНИТЬ")
+        SaveBtn.setAutoFillBackground(True)
+        SaveBtn.setStyleSheet("background-color: #11aa00;")
+        palette = SaveBtn.palette()
         palette.setColor(QPalette.Window, QColor('green'))
-        self.SaveBtn.setPalette(palette)
-        font = self.SaveBtn.font()
+        SaveBtn.setPalette(palette)
+        font = SaveBtn.font()
         font.setPointSize(16)
         font.setBold(True)
-        self.SaveBtn.setFont(font)
-        self.SaveBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.SaveBtn.clicked.connect(self.db_save)
-        BoxSave.addWidget(self.SaveBtn)
+        SaveBtn.setFont(font)
+        SaveBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        SaveBtn.clicked.connect(self.db_save)
+        BoxSave.addWidget(SaveBtn)
         BoxSave.setAlignment(Qt.AlignHCenter)
 
         Box_Right.addWidget(BoxTable, stretch=3)
@@ -350,193 +550,46 @@ class Table(QWidget):
         layout.addWidget(left_widget, stretch=2)
         layout.addWidget(right_widget, stretch=3)       
         self.widget.setLayout(layout)
-    
-    def delete_line(self, id: int):
-        print(f"УДАЛЯЕМ СТРОКУ #{id}")  
-        #self.data.pop(id)        
-        row = self.table.itemAt(id-1).layout()  #Выбираем саму строку
-        for i in range(0, row.count()):         #Удаляем её содержимое
-            row.itemAt(i).widget().deleteLater()
-        row.deleteLater()                       #Удаляем опустошённую строку
-        self.table_lines.pop(id-1)              #Удаляем указатель на строку
-
-    def data_format(self, line):
-        a = type(line)
-        if a == QDateEdit:
-            return str(line.date().year()) + "-" + str(line.date().month()) + "-" + str(line.date().day())
-        elif a == QLineEdit:
-            return line.text()
-        elif a == QComboBox:
-            return line.currentText()
-        elif a == QCheckBox:
-            return str(line.isChecked())
             
     def db_save(self):
-        pattern = tables[self.name]
-        text_main = "start, end, result, name, teacher, tab"
-        match self.type:
-            case "part1": 
-                pat = ["", "" , "", "", "no", "no", "", ]
-                text_add = "theme, class, form, event_id"
-            case "part2": 
-                pat = ["", "", "no", "no", "no", "no", "no"]
-                text_add = "place, worked_as, level, event_id"
-            case "part3": 
-                pat = ["", "", "no", "no", "no", "no", "no", "no", "no", "no", "no", "no", "no"]
-                text_add = "theme, form, place, worked_as, level, time, organizator, document, link, event_id"
-            case "part4": 
-                pat = ["", "", "no", "", "no", "no", "no", "no", ""]
-                text_add = "theme, class, level, document, pupil, event_id"
-
-        lines = []
-        for i in range(0, self.table.count()): #Проход по строкам в таблице
-            line = []
-            res = pat.copy()
-            for j in range(0, self.table.itemAt(i).layout().count()): #Проход по столбцам в таблице
-                line.append(self.table.itemAt(i).layout().itemAt(j).widget())
-            
-            for j in range(len(pattern)-1):
-                for k in pattern[j+1][-1]:
-                    res[k] = self.data_format(line[j])
-            print(res, end="\n\n")
-            if not(tuple(res) in self.data):
-                self.data.append(list(res))
-                print("NEW LINE - ", end="")
-            lines.append(res)
-
-        self.win.cursor.execute(f"DELETE FROM general WHERE teacher=0 AND tab={self.table_num}")
-
-        for line in lines:
-            print(line)
-            gen_inp = ""
-            for i in range(0, 4):
-                gen_inp += f"'{line[i]}'"
-                if i != (len(line)-1):
-                    gen_inp += ", "
-            gen_inp += f"{self.win.teach}, "
-            gen_inp += f"{self.table_num}"
-            command = f"INSERT INTO general ({text_main}) VALUES ({gen_inp})"
-            print(command)
-            self.win.cursor.execute(command)
-
-            id_db = self.win.cursor.execute("SELECT id FROM general ORDER BY id DESC LIMIT 1")
-            id = int(id_db.fetchone()[0])
-            id_str = f", {id}"
-
-            add_inp = ""
-            for i in range(4, len(line)):
-                add_inp += f"'{line[i]}'"
-                if i != (len(line)-1):
-                    add_inp += ", "
-            add_inp += id_str
-            command = f"INSERT INTO {self.type} ({text_add}) VALUES ({add_inp})"
-            print(command, end="\n\n")
-            self.win.cursor.execute(command)
-        self.win.database.commit()    
+        print("СОХРАНЯЕМ СЛЕДУЮЩИЕ ДАННЫЕ:")
+        for i in range(len(self.data)):
+            print(f"{i}: {self.data[i]}")
         print("Дело сделано!")
 
-    def db_row (self, line: tuple, pattern: list):
-        row = QHBoxLayout()
-        for i in range(1, len(pattern)):
-            value = line[pattern[i][-1][0]]
-            match pattern[i][0]:
-                case "Text":
-                    field = QLineEdit()
-                    field.setText(value)
-                    row.addWidget(field)
-                case "SText":
-                    field = QLineEdit()
-                    field.setMaximumWidth(35)
-                    field.setText(value)
-                    row.addWidget(field)
-                case "Number":
-                    field = QSpinBox()
-                    field.setMinimum(pattern[i][1])
-                    field.setMaximum(pattern[i][2])
-                    field.setValue(int(value))
-                    row.addWidget(field)
-                case "Date":
-                    field = QDateEdit()
-                    field_data = value.split("-")
-                    field.setDate(QDate(int(field_data[0]),int(field_data[1]),int(field_data[2])))
-                    row.addWidget(field)
-                case "List":
-                    field = QComboBox()
-                    field.addItems(pattern[i][1:-1])
-                    index = field.findText(value)
-                    field.setCurrentIndex(index)
-                    row.addWidget(field)
-                case "EList":
-                    field = QComboBox()
-                    field.setEditable(True)
-                    field.addItems(pattern[i][1:-1])
-                    index = field.findText(value)
-                    if index == -1:
-                        field.addItem(value)
-                    index = field.findText(value)
-                    field.setCurrentIndex(index)
-                    row.addWidget(field)
-                case "Check":
-                    box = QCheckBox()
-                    if value == "True":
-                        box.setChecked(True)
-                    row.addWidget(box)
+    def new_row(self, data=[]):
+        self.flag = "NEW"
+        if not data:
+            data = []
+        newRow = QPushButton()
+        newRow.setStyleSheet('border: 1px solid black;\
+                                background-color: #ffffff')
+        newRow.setMinimumHeight(50)
+        newRow.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        newRow.clicked.connect(lambda: self.edit_row(self.rows.indexOf(newRow)))
+        self.curRow = QHBoxLayout(newRow)
 
-        delete = QPushButton("X")
-        delete.setObjectName(str(self.table_counter))
-        self.table_counter += 1
-        self.table_lines.append(delete.objectName())
-        font = delete.font()
-        font.setBold(True)
-        delete.setFont(font)
-        delete.setMaximumSize(30,30)
-        delete.clicked.connect(lambda: self.delete_line(self.table_lines.index(delete.objectName())+1))
-        row.addWidget(delete)
-        self.table.addLayout(row)
+        self.f = RowForm(self, data)
+        self.f.exec()
 
-    def new_row(self, pattern: list):
-        row = QHBoxLayout()
-        for i in range(1, len(pattern)):
-            match pattern[i][0]:
-                case "Text":
-                    field = QLineEdit()
-                    row.addWidget(field)
-                case "SText":
-                    field = QLineEdit()
-                    field.setMaximumWidth(35)
-                    row.addWidget(field)
-                case "Number":
-                    field = QSpinBox()
-                    field.setMinimum(pattern[i][1])
-                    field.setMaximum(pattern[i][2])
-                    row.addWidget(field)
-                case "Date":
-                    field = QDateEdit()
-                    field.setDate(QDate.currentDate())
-                    row.addWidget(field)
-                case "List":
-                    field = QComboBox()
-                    field.addItems(pattern[i][1:])
-                    row.addWidget(field)
-                case "EList":
-                    field = QComboBox()
-                    field.setEditable(True)
-                    field.addItems(pattern[i][1:])
-                    row.addWidget(field)
-                case "Check":
-                    box = QCheckBox()
-                    row.addWidget(box)
-        delete = QPushButton("X")
-        delete.setObjectName(str(self.table_counter))
-        self.table_counter += 1
-        self.table_lines.append(delete.objectName())
-        font = delete.font()
-        font.setBold(True)
-        delete.setFont(font)
-        delete.setMaximumSize(30,30)
-        delete.clicked.connect(lambda: self.delete_line(self.table_lines.index(delete.objectName())+1))
-        row.addWidget(delete)
-        self.table.addLayout(row)
+        if self.flag == "OK":
+            self.rows.insertWidget(self.rows.count()-1, newRow)
+
+    def edit_row(self, index):
+        self.flag = "EDIT"
+        self.curIndex = index
+        print(index, end=": ")
+        print(self.data[index])
+        self.curRow = self.rows.itemAt(index).widget().children()[0]
+
+        self.f = RowForm(self, self.data[index])
+        self.f.exec()
+
+        if self.flag == "DEL":
+            self.rows.itemAt(index).widget().deleteLater()
+        ...
+
+    
 
 class Color(QWidget):
     def __init__(self, color):
@@ -546,22 +599,34 @@ class Color(QWidget):
         palette.setColor(QPalette.Window, QColor(color))
         self.setPalette(palette)
 
+class AuthDialog(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.label = QLabel("Another Window")
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
-
         super().__init__()
         self.setWindowTitle("PlanTable")
         self.setMinimumSize(QSize(1024, 720))
-        self.db_init("database.db")
-        self.doc = Document()
+        
+        toolbar = QToolBar("My main toolbar")
+        self.addToolBar(toolbar)
+
         self.teach = 0
+        # self.w = AuthDialog()
+        # self.w.show()
         self.pages = QStackedLayout()   
         self.tables = []                    #создаём стак
+        self.draw()
 
 #Авторизация
-        #dlg_auth = QDialog(self)
 
-
+    def draw(self):
 #Главная страница      
         self.page_main = QWidget()                          #делаем виджет для первой страницы
         PL_main = QVBoxLayout()                             #слой для страницы
@@ -619,14 +684,11 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.page_plan_p1)
 
 #таблица "Проведение открытых уроков, классных часов, предметных недель, других мероприятий"
-        Header = "Проведение открытых уроков, классных часов, предметных недель, других мероприятий"
-        self.tables.append(Table(Header, self, "table-01"))
-        self.tables[0].btn_prev.setEnabled(False) #Таблица первая, поэтому переход на предыдущую недоступен
+        self.tables.append(Table(self, "t-01"))
         self.pages.addWidget(self.tables[-1].widget)
         
 #таблица "Участие в подготовке и проведении лицейских мероприятий"
-        Header = "Участие в подготовке и проведении лицейских мероприятий"
-        self.tables.append(Table(Header, self, "table-02"))
+        self.tables.append(Table(self, "t-02"))
         self.pages.addWidget(self.tables[-1].widget)
 
 #План по Научно-методической работе
@@ -651,18 +713,15 @@ class MainWindow(QMainWindow):
 
 #таблицы второго раздела
     #Таблица "Запланированные мероприятия"
-        Header = "Запланированные мероприятия"
-        self.tables.append(Table(Header, self, "table-03"))
+        self.tables.append(Table(self, "t-03"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок"
-        Header = "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок"
-        self.tables.append(Table(Header, self, "table-04"))
+        self.tables.append(Table(self, "t-04"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Экспертная Деятельность"
-        Header = "Экспертная Деятельность"
-        self.tables.append(Table(Header, self, "table-05"))
+        self.tables.append(Table(self, "t-05"))
         self.pages.addWidget(self.tables[-1].widget)
 
 #План по Повышению Квалификации
@@ -702,38 +761,31 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.page_plan_p3)
 
     #Таблица "Обучение на курсах повышения квалификации, посещение опорных школ и др."
-        Header = "Обучение на курсах повышения квалификации, посещение опорных школ и др."
-        self.tables.append(Table(Header, self, "table-06"))
+        self.tables.append(Table(self, "t-06"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Участие в сертифицированные вебинарах, семинарах и др."
-        Header = "Участие в сертифицированные вебинарах, семинарах и др."
-        self.tables.append(Table(Header, self, "table-07"))
+        self.tables.append(Table(self, "t-07"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Участие в конкурсах профессионального мастерства"
-        Header = "Участие в конкурсах профессионального мастерства"
-        self.tables.append(Table(Header, self, "table-08"))
+        self.tables.append(Table(self, "t-08"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Обобщение и представление опыта работы"
-        Header = "Обобщение и представление опыта работы"
-        self.tables.append(Table(Header, self, "table-09"))
+        self.tables.append(Table(self, "t-09"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Участие в диагностике профессиональных дефицитов/предметных компетенций"
-        Header = "Участие в диагностике профессиональных дефицитов/предметных компетенций"
-        self.tables.append(Table(Header, self, "table-10"))
+        self.tables.append(Table(self, "t-10"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Участие во внешкольных мероприятий"
-        Header = "Участие во внешкольных мероприятий"
-        self.tables.append(Table(Header, self, "table-11"))
+        self.tables.append(Table(self, "t-11"))
         self.pages.addWidget(self.tables[-1].widget)
 
     #Таблица "Посещение уроков, кл.часов, мероприятий у коллег в школе"
-        Header = "Посещение уроков, кл.часов, мероприятий у коллег в школе"
-        self.tables.append(Table(Header, self, "table-12"))
+        self.tables.append(Table(self, "t-12"))
         self.pages.addWidget(self.tables[-1].widget)
 
 #План по Работе с обучающимися
@@ -765,28 +817,23 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.page_plan_p4)
 
         #Таблица "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ"
-        Header = "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ"
-        self.tables.append(Table(Header, self, "table-13"))
+        self.tables.append(Table(self, "t-13"))
         self.pages.addWidget(self.tables[-1].widget)
 
         #Таблица "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др."
-        Header = "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др."
-        self.tables.append(Table(Header, self, "table-14"))
+        self.tables.append(Table(self, "t-14"))
         self.pages.addWidget(self.tables[-1].widget)
 
         #Таблица "Участие обучающихся в соревнованиях профессиональных компетенций "
-        Header = "Участие обучающихся в соревнованиях профессиональных компетенций "
-        self.tables.append(Table(Header, self, "table-15"))
+        self.tables.append(Table(self, "t-15"))
         self.pages.addWidget(self.tables[-1].widget)
 
         #Таблица "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ"
-        Header = "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ"
-        self.tables.append(Table(Header, self, "table-16"))
+        self.tables.append(Table(self, "t-16"))
         self.pages.addWidget(self.tables[-1].widget)
 
         #Таблица "Участие в профильных сменах"
-        Header = "Участие в профильных сменах"
-        self.tables.append(Table(Header, self, "table-17"))
+        self.tables.append(Table(self, "t-17"))
         self.tables[-1].Btn_next.setEnabled(False) #Таблица последняя, поэтому переход на следующую недоступен
         self.pages.addWidget(self.tables[-1].widget)
 
@@ -794,46 +841,14 @@ class MainWindow(QMainWindow):
         widget.setLayout(self.pages)
         self.setCentralWidget(widget)
 
-    def db_init(self, name: str):
-        self.database = sqlite3.connect("database.db")
-        self.cursor = self.database.cursor()
-        self.cursor.execute("PRAGMA foreign_keys = ON") #Включить поддержку sqlite внешних ключей
-        for table_name in ["personal", "general", "part1", "part2", "part3", "part4"]:
-            line = f"SELECT name FROM sqlite_master WHERE name='{table_name}'"
-            check_table = self.cursor.execute(line)
-            if check_table.fetchone() is None:  #Если таблица вдруг не найдена, её нужно создать
-                print(f"Таблица {table_name} не найдена. Создаю таблицу...")
-                match table_name:
-                    case "personal":
-                        self.cursor.execute("CREATE TABLE personal(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            name TEXT, qualification TEXT, prof TEXT, subj TEXT, theme TEXT, time TEXT, method TEXT)")
-                    case "general":
-                        self.cursor.execute("CREATE TABLE general(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            start TEXT, end TEXT, result TEXT, name TEXT, teacher INTEGER, tab INTEGER, \
-                                            FOREIGN KEY (teacher) REFERENCES personal(id) ON DELETE CASCADE)")
-                    case "part1":
-                        self.cursor.execute("CREATE TABLE part1(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            theme TEXT, class TEXT, form TEXT, event_id INTEGER, \
-                                            FOREIGN KEY (event_id) REFERENCES general(id) ON DELETE CASCADE)")
-                    case "part2":
-                        self.cursor.execute("CREATE TABLE part2(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            place TEXT, worked_as TEXT, level TEXT, event_id INTEGER, \
-                                            FOREIGN KEY (event_id) REFERENCES general(id) ON DELETE CASCADE)")
-                    case "part3":
-                        self.cursor.execute("CREATE TABLE part3(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            theme TEXT, form TEXT, place TEXT, worked_as TEXT, level TEXT, time INTEGER, organizator TEXT, document TEXT, \
-                                            link TEXT, event_id INTEGER, FOREIGN KEY (event_id) REFERENCES general(id) ON DELETE CASCADE)")
-                    case "part4":
-                        self.cursor.execute("CREATE TABLE part4(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                                            theme TEXT, class TEXT, level TEXT, document TEXT, pupil TEXT, event_id INTEGER, FOREIGN KEY (event_id) \
-                                            REFERENCES general(id) ON DELETE CASCADE)")
-        check = self.cursor.execute("SELECT * FROM personal WHERE id=0")
-        if check.fetchone() is None:
-            self.cursor.execute("INSERT INTO personal (id, name, qualification) VALUES (0, 'test', 'dev')")
-            self.database.commit()
-            print("Тестовый профиль с индексом 0 создан.")
-        print("База данных подключена и проверена. Продолжаю запуск...")
+    def serverConnect(self):
+        response = requests.get(f"http://127.0.0.1:8000/")
+        if response.text == "OK":
+            print("Подключение к серверу работает. Продолжаем запуск.")
                 
+    def auth(self):
+        pass
+
     def goTo(self, page):
         self.pages.setCurrentWidget(page)
     
@@ -877,46 +892,92 @@ class MainWindow(QMainWindow):
         return lbl
     
     def docx_test(self):
-        print("Тестовая генерация документа начата...")
-        for tablepage in self.tables:
+        print("Генерация документа начата...")
+        doc = Document()
+        self.style = doc.styles["Normal"]
+        self.style.font.name = "Times New Roman"
+        self.style.font.size = Pt(12)
+        doc.sections[0].orientation = WD_ORIENT.LANDSCAPE
+        doc.sections[0].page_width = Mm(297)
+        doc.sections[0].page_height = Cm(21)
+        doc.sections[0].left_margin = Mm(30)
+        doc.sections[0].right_margin = Mm(15)
+        doc.sections[0].top_margin = Mm(20)
+        doc.sections[0].bottom_margin = Mm(20)
+        curdate = datetime.now()
+        if curdate.month > 9:
+            years = (curdate.year, curdate.year+1)
+        else:
+            years = (curdate.year-1, curdate.year)
+        head = doc.add_paragraph()
+        head.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        hline = head.add_run('Индивидуальный план работы учителя МБОУ "Лицей №1" г.Братска')
+        hline.bold = True
+        hline.font.size = Pt(14)
 
-            index = self.tables.index(tablepage)
-            print(index)
-            data = tablepage.data
-            if index == 15:
-                m = max(len(data), len(self.tables[16].data))
-                for i in range(m):
-                    if i < len(data) and i < len(self.tables[16].data):
-                        data[i] += self.tables[16].data[i]
-                    elif i < len(data) and i >= len(self.tables[16].data):
-                        data[i] += ["" for index in range(9)]
-                    elif i >= len(data) and i < len(self.tables[16].data):
-                        data.insert(i ,["" for index in range(9)] + self.tables[16].data[i])
+        year = doc.add_paragraph()
+        year.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        a = year.add_run(str(years[0]))
+        a.bold = True
+        a.font.size = Pt(14)
+        a = year.add_run(" — ")
+        a.font.size = Pt(14)
+        a = year.add_run(str(years[1]))
+        a.bold = True
+        a.font.size = Pt(14)
+        year.add_run(" учебный год")
 
-            self.doc.add_paragraph()
-            p = self.doc.add_paragraph()
-            p.add_run(docTables[index][0]).bold = True
-            table = self.doc.add_table(rows=1, cols=len(docTables[index][1]))
-            hed_line = table.rows[0].cells
-            for i in range(len(hed_line)):
-                hed_line[i].text = docTables[index][1][i]
-                make_rows_bold(table.rows[0])
-            for line in data:
-                row = table.add_row().cells
-                for i in range(len(docTables[index][2])):
-                    #print(len(line))
-                    num = docTables[index][2][i]
-                    if index == 15 and (num == 0 or num == 9):
-                        row[i].text = f"{line[num]} - {line[num+1]}"
-                    else:
-                        row[i].text = line[num] 
-            if index == 15:
-                break
 
+
+        index = -1
+        for block in docTables:
+            doc.add_paragraph()
+            blockhead = doc.add_paragraph(style="List Number")
+            a = blockhead.add_run(block[0])
+            a.bold = True
+            a.italic = True
+            a.font.size = Pt(14)
+            for table in block[1:]:  #Проход по каждой таблице в блоке
+                index += 1
+                print(index)
+                data = self.tables[index].data
+                if index == 15:
+                    m = max(len(data), len(self.tables[16].data))
+                    for i in range(m):
+                        if i < len(data) and i < len(self.tables[16].data):
+                            data[i] += self.tables[16].data[i]
+                        elif i < len(data) and i >= len(self.tables[16].data):
+                            data[i] += ["" for index in range(9)]
+                        elif i >= len(data) and i < len(self.tables[16].data):
+                            data.insert(i ,["" for index in range(9)] + self.tables[16].data[i])
+                
+                p = doc.add_paragraph()
+                p.add_run(table[0]).bold = True
+                tab = doc.add_table(rows = 1, cols = len(table[1])+1)
+                tab.style = "Table Grid"
+                hedline = tab.rows[0].cells
+                hedline[0].text = "№"
+                for i in range(1, len(hedline)):
+                    hedline[i].text = table[1][i-1]
+                make_rows_bold(tab.rows[0])
+                cnt = 1
+                for line in data:
+                    row = tab.add_row().cells
+                    row[0].text = str(cnt)
+                    cnt += 1
+                    for i in range(0, len(table[2])):
+                        num = table[2][i]
+                        if index == 15 and (num == 0 or num == 9):
+                            row[i+1].text = f"{line[num]} - {line[num+1]}"
+                        else:
+                            row[i+1].text = line[num]
+                if index == 15:
+                    break
+                doc.add_paragraph()
         
 
-        self.doc.save("test.docx")
-        print('Документ "test.docx" готов!')
+        doc.save(f"test.docx")
+        print(f'Документ "test.docx" готов!')
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
