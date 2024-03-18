@@ -11,202 +11,391 @@ from docx.enum.section import WD_SECTION, WD_ORIENT
 from docx.shared import Pt, Mm, Cm
 from datetime import datetime
 
-tables = {  #Шаблоны для генерации страниц заполнения таблиц
+tables = {  #Шаблоны для генерации страниц заполнения таблиц. Типы таблиц - oc, se, et, 
     "t-01": {
         'name': "Проведение открытых уроков, классных часов, предметных недель, других мероприятий",
-        'fields': [
-            ["Дата", "Date"],
-            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика")],
-            ["Класс", "SText"],
-            ["Тема", "Text"],
-            ["Цель", "Text"],
-            ["Отметка", "Check"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), 'date'],
+            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика"), 'name'],
+            ["Класс", "SText", (), 'studClass'],
+            ["Тема", "Text", (), "theme"],
+            ["Цель", "Text", (), "target"],
+            ["Отметка", "Check", (), "result"]
         ],
-        'type': 'oc'    #open_class = открытый урок
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "open_class",    #open_class = открытый урок 
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 1,
+            "studClass": "",
+            "theme": "",
+            "target": "",
+            "result": ""
+        }
     },
     "t-02": {
         'name': "Участие в подготовке и проведении лицейских мероприятий",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "EList", ("Заседание Кафедры", "Педсовет", "Педагогическое чтение", "Конференция", "Олимпиада", "Конкурс", "Выставка", "Предметная неделя")],
-            ["Форма участия", "EList", ("Очная", "Заочная", "Дистанционная")],
-            ["Документ", "List", ("Протокол", "Выписка", "План", "Отзыв", "Приказ")]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "EList", ("Заседание Кафедры", "Педсовет", "Педагогическое чтение", "Конференция", "Олимпиада", "Конкурс", "Выставка", "Предметная неделя"), "name"],
+            ["Форма участия", "EList", ("Очная", "Заочная", "Дистанционная"), "form"],
+            ["Документ", "List", ("Протокол", "Выписка", "План", "Отзыв", "Приказ"), "document"]
         ],
-        'type': 'se'    #self_education = самообразование
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "organization",    #self_education = самообразование
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 2,
+            "form": "",
+            "document": "",
+            "place": "Лицей №1"
+        }
     },
     "t-03": {
         'name': "Запланированные мероприятия",
-        'fields': [
-            ["Мероприятие", "Text"],
-            ["Результат", "Text"],
-            ["Место проведения", "Text"],
-            ["Дата", "Date"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Мероприятие", "Text", (), "name"],
+            ["Результат", "Text", (), "document"],
+            ["Место проведения", "Text", (), "place"],
+            ["Дата", "Date", (), "date"]
         ],
-        'type': 'se'    #self_education = самообразование
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "organization",    #self_education = самообразование
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 3,
+            "form": "-",
+            "document": "",
+            "place": ""
+        }
     },
     "t-04": {
         'name': "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок",
-        'fields': [
-            ["Название", "Text"],
-            ["Личное участие", "Text"],
-            ["Дата", "Date"],
-            ["Результат", "Text"]
-        ],
-        'type': 'et'    #ExperTise = экспертная деятельность
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Название", "Text", (), "name"],
+            ["Личное участие", "Text", (), "action"],
+            ["Дата", "Date", (), "date"],
+            ["Результат", "Text", (), "result"]
+        ],  
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "expertise",    #ExperTise = экспертная деятельность
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 4,
+            "result": "",
+            "action": "",
+            "level": "-"
+        }
     },
     "t-05": {
         'name': "Экспертная Деятельность",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Вид деятельности", "List", ("судья", "эксперт", "жюри")],
-            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Вид деятельности", "List", ("судья", "эксперт", "жюри"), "action"],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"]
         ],
-        'type': 'et'    #ExperTise = экспертная деятельность
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "expertise",    #ExperTise = экспертная деятельность
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 5,
+            "result": "Проведено",
+            "action": "",
+            "level": ""
+        }
     },
     "t-06": {
         'name': "Обучение на курсах повышения квалификации, посещение опорных школ и др.",
-        'fields': [
-            ["Дата", "Date"],
-            ["Тема", "Text"],
-            ["Учреждение", "Text"],
-            ["Часы", "Number", 0, 500],
-            ["Документ", "Text"],
-            ["Формат", "EList", ("очный", "дистанционный", "очный, с применением дистанционных технологий")]
-        ],
-        'type': 'cr'    #CouRse = прохождение курсов и пр.
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Тема", "Text", (), "theme"],
+            ["Учреждение", "Text", (), "place"],
+            ["Часы", "Number", (0, 500), "length"],
+            ["Документ", "Text", (), "document"],
+            ["Формат", "EList", ("очный", "дистанционный", "очный, с применением дистанционных технологий"), "form"]
+        ],  
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "course",    #CouRse = прохождение курсов и пр.
+            "teacher": "",
+            "date": "",
+            "name": "Курс",
+            "table": 6,
+            "theme": "",
+            "form": "",
+            "document": "",
+            "place": "",
+            "organizer": "-",
+            "length": ""
+        }
     },
     "t-07": {
         'name': "Участие в сертифицированные вебинарах, семинарах и др.",
-        'fields': [
-            ["Дата", "Date"],
-            ["Тема", "Text"],
-            ["Организатор", "Text"],
-            ["Формат", "Text"],
-            ["Часы", "Number", 0, 500],
-            ["Документ", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Тема", "Text", (), "theme"],
+            ["Организатор", "Text", (), "organizer"],
+            ["Формат", "Text", (), "form"],
+            ["Часы", "Number", (0, 500), "length"],
+            ["Документ", "Text", (), "document"]
         ],
-        'type': 'cr'    #CouRse = прохождение курсов и пр.
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "course",    #CouRse = прохождение курсов и пр.
+            "teacher": "",
+            "date": "",
+            "name": "Курс",
+            "table": 7,
+            "theme": "",
+            "form": "",
+            "document": "",
+            "place": "-",
+            "organizer": "",
+            "length": ""
+        }
     },
     "t-08": {
         'name': "Участие в конкурсах профессионального мастерства",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Уровень", "List", ("школьный", "муниципальный", "региональный", "всероссийский")],
-            ["Формат", "List", ("очная", "заочная", "дистанционная")],
-            ["Этап", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Результат", "Text"],
-            ["Документ", "Text"],
-            ["Ссылка", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Уровень", "List", ("школьный", "муниципальный", "региональный", "всероссийский"), "level"],
+            ["Формат", "List", ("очная", "заочная", "дистанционная"), "form"],
+            ["Этап", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "place"],
+            ["Результат", "Text", (), "result"],
+            ["Документ", "Text", (), "document"],
+            ["Ссылка", "Text", (), "link"]
         ],
-        'type': 'ec'    #ExperienCe = предоставление опыта
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "experience",    #ExperienCe = предоставление опыта
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 8,
+            "theme": "-",
+            "result": "",
+            "form": "",
+            "document": "",
+            "place": "",
+            "action": "-",
+            "level": "",
+            "link": ""
+        }
     },
     "t-09": {
         'name': "Обобщение и представление опыта работы",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Форма участия", "List", ("очная", "заочная", "дистанционная")],
-            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Тема", "Text"],
-            ["Вид деятельности", "EList", ("выступление", "публикация", "мастер-класс")],
-            ["Публикация", "EList", ("статья", "метод", "разработка")],
-            ["Орган", "Text"],
-            ["Ссылка", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Форма участия", "List", ("очная", "заочная", "дистанционная"), "form"],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
+            ["Тема", "Text", (), "theme"],
+            ["Вид деятельности", "EList", ("выступление", "публикация", "мастер-класс"), "action"],
+            ["Публикация", "EList", ("статья", "метод", "разработка"), "document"],
+            ["Орган", "Text", (), "place"],
+            ["Ссылка", "Text", (), "link"]
         ],
-        'type': 'ec'    #ExperienCe = предоставление опыта
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "experience",    #ExperienCe = предоставление опыта
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 9,
+            "theme": "",
+            "result": "-",
+            "form": "",
+            "document": "",
+            "place": "",
+            "action": "",
+            "level": "",
+            "link": ""
+        }
     },
     "t-10": {
         'name': "Участие в диагностике профессиональных дефицитов/предметных компетенций",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Результат", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Результат", "Text", (), "result"]
         ],
-        'type': 'et'    #ExperTise = экспертная деятельность
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "expertise",    #ExperTise = экспертная деятельность
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 10,
+            "result": "",
+            "action": "-",
+            "level": "-"
+        }
     },
     "t-11": {
         'name': "Участие во внешкольных мероприятий",
-        'fields': [
-            ["Дата", "Date"],
-            ["Тип", "EList", ("Школа Современного Педагога", "конференция", "семинар", "консультация", "стажировочная площадка", "урок коллег из другой школы")],
-            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Статус", "List", ("организатор", "участник")],
-            ["Место проведения", "Text"],
-            ["Тема", "Text"],
-            ["Организатор", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Тип", "EList", ("Школа Современного Педагога", "конференция", "семинар", "консультация", "стажировочная площадка", "урок коллег из другой школы"), "name"],
+            ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
+            ["Статус", "List", ("организатор", "участник"), "form"],
+            ["Место проведения", "Text", (), "place"],
+            ["Тема", "Text", (), "theme"],
+            ["Организатор", "Text", (), "organizer"]
         ],
-        'type': 'cr'    #CouRse = прохождение курсов и пр.
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "course",    #CouRse = прохождение курсов и пр.
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 11,
+            "theme": "",
+            "form": "",
+            "document": "",
+            "place": "",
+            "organizer": "",
+            "length": 0
+        }
     },
     "t-12": {
         'name': "Посещение уроков, кл.часов, мероприятий у коллег в школе",
-        'fields': [
-            ["Дата", "Date"],
-            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика")],
-            ["Класс", "SText"],
-            ["Тема", "Text"],
-            ["Цель", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика"), "name"],
+            ["Класс", "SText", (), "studClass"],
+            ["Тема", "Text", (), "theme"],
+            ["Цель", "Text", (), "target"]
         ],
-        'type': 'oc'    #open_class = открытый урок
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "open_class",
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 12,
+            "studClass": "",
+            "theme": "",
+            "target": "",
+            "result": "Посещено"
+        }
     },
     "t-13": {
         'name': "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Обучающийся", "Text"],
-            ["Класс", "SText"],
-            ["Этап", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Результат", "Text"],
-            ["Документ", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Обучающийся", "Text", (), "student"],
+            ["Класс", "SText", (), "studClass"],
+            ["Этап", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
+            ["Результат", "Text", (), "result"],
+            ["Документ", "Text", (), "document"]
         ],
-        'type': 'sw'    #student_work = работа с учениками
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "student_work",    #student_work = работа с учениками
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 13,
+            "result": "",
+            "theme": "-",
+            "student": "",
+            "studClass": "",
+            "level": "",
+            "document": ""
+        }
     },
     "t-14": {
         'name': "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др.",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Обучающийся", "Text"],
-            ["Класс", "SText"],
-            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Результат", "Text"],
-            ["Документ", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Обучающийся", "Text", (), "student"],
+            ["Класс", "SText", (), "studClass"],
+            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
+            ["Результат", "Text", (), "result"],
+            ["Документ", "Text", (), "document"]
         ],
-        'type': 'sw'    #student_work = работа с учениками
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "student_work",    #student_work = работа с учениками
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 14,
+            "result": "",
+            "theme": "-",
+            "student": "",
+            "studClass": "",
+            "level": "",
+            "document": ""
+        }
     },
     "t-15": {
         'name': "Участие обучающихся в соревнованиях профессиональных компетенций",
-        'fields': [
-            ["Дата", "Date"],
-            ["Название", "Text"],
-            ["Компетенция", "Text"],
-            ["Обучающийся", "Text"],
-            ["Класс", "SText"],
-            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный")],
-            ["Результат", "Text"],
-            ["Документ", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Дата", "Date", (), "date"],
+            ["Название", "Text", (), "name"],
+            ["Компетенция", "Text", (), "theme"],
+            ["Обучающийся", "Text", (), "student"],
+            ["Класс", "SText", (), "studClass"],
+            ["Уровень", "EList", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
+            ["Результат", "Text", (), "result"],
+            ["Документ", "Text", (), "document"]
         ],
-        'type': 'sw'    #student_work = работа с учениками
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "student_work",    #student_work = работа с учениками
+            "teacher": "",
+            "date": "",
+            "name": "",
+            "table": 15,
+            "result": "",
+            "theme": "",
+            "student": "",
+            "studClass": "",
+            "level": "",
+            "document": ""
+        }
     },
     "t-16": {
         'name': "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ",
-        'fields': [
-            ["Название", "Text"],
-            ["Дата", "Date"],
-            ["Обучающийся", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Название", "Text", (), "name"],
+            ["Дата", "Date", (), "date"],
+            ["Обучающийся", "Text", (), "student"]
         ],
-        'type': 'sw'    #student_work = работа с учениками
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "student_work",    #student_work = работа с учениками
+            "teacher": "",
+            "date": "",
+            "name": "Курс",
+            "table": 16,
+            "result": "-",
+            "theme": "-",
+            "student": "",
+            "studClass": "-",
+            "level": "-",
+            "document": "-"
+        }
     },
     "t-17": {
         'name': "Участие в профильных сменах",
-        'fields': [
-            ["Название", "Text"],
-            ["Дата", "Date"],
-            ["Обучающийся", "Text"]
+        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+            ["Название", "Text", (), "name"],
+            ["Дата", "Date", (), "date"],
+            ["Обучающийся", "Text", (), "student"]
         ],
-        'type': 'sw'    #student_work = работа с учениками
+        'pattern': {    #Словарь для отправки форматированных данных на сервер
+            "type": "student_work",    #student_work = работа с учениками
+            "teacher": "",
+            "date": "",
+            "name": "Курс",
+            "table": 17,
+            "result": "-",
+            "theme": "-",
+            "student": "",
+            "studClass": "-",
+            "level": "-",
+            "document": "-"
+        }
     }
 }
 
@@ -236,22 +425,22 @@ docTables = [ #Шаблоны для заполнения документов
     ]
 ]
 
-def make_rows_bold(*rows):
+def make_rows_bold(*rows):  #Функция для генерации документа - делает строку таблицы жирной (для заголовков, в основном)
     for row in rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
                 for run in paragraph.runs:
                     run.font.bold = True
 
-class QHLine(QFrame):
+class QHLine(QFrame):   #Горизонтальная полоска-разделитель.
     def __init__(self):
         super(QHLine, self).__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
 
 class RowForm(QDialog):
-    def __init__(self, root, data:list = []):    #Делаем ссылку на родителя
-        self.root = root
+    def __init__(self, root, data:dict = {}):    #Делаем ссылку на родителя
+        self.root = root    #Ссылка на основное окно для взаимодействия
         self.data = data
         # print(data)
         super().__init__()
@@ -266,32 +455,34 @@ class RowForm(QDialog):
             row.setAlignment(Qt.AlignTop | Qt.AlignLeft)
             row.addWidget(QLabel(pattern[i][0]), stretch=1)
             field = 0
-            match pattern[i][1]:
+            db_f = pattern[i][3]    #pattern[3] - Название поля в БД
+            match pattern[i][1]:    #pattern[1] - Тип поля в форме
                 case "Text":
                     field = QTextEdit()
                     field.setMaximumWidth(640)
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                     if len(data) > 0:
-                        field.setText(data[i])
+                        field.setText(data[db_f])
                     # test.append(field)
                 case "SText":
                     field = QLineEdit()
                     field.setMaximumWidth(50)
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    field.setMaxLength(3)
                     if len(data) > 0:
-                        field.setText(data[i])
+                        field.setText(data[db_f])
                     # test.append(field)
                 case "Number":
                     field = QSpinBox()
-                    field.setMinimum(pattern[i][2])
-                    field.setMaximum(pattern[i][3])
+                    field.setMinimum(pattern[i][2][0])  #pattern[2] - Доп.данные (поля списков или ограничитель для чисел)
+                    field.setMaximum(pattern[i][2][1])
                     field.setMaximumWidth(50)
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     if len(data) > 0:
-                        field.setValue(data[i])
+                        field.setValue(data[db_f])
                     # test.append(field)
                 case "Date":
                     field = QDateEdit()
@@ -299,7 +490,7 @@ class RowForm(QDialog):
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     if len(data) > 0:
-                        field_data = data[i].split(".")
+                        field_data = data[db_f].split(".")
                         field.setDate(QDate(int(field_data[2]),int(field_data[1]),int(field_data[0])))
                     # test.append(field)
                 case "List":
@@ -308,7 +499,7 @@ class RowForm(QDialog):
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     if len(data) > 0:
-                        index = field.findText(data[i])
+                        index = field.findText(data[db_f])
                         field.setCurrentIndex(index)    
                     # test.append(field)
                 case "EList":
@@ -316,10 +507,10 @@ class RowForm(QDialog):
                     field.setEditable(True)
                     field.addItems(pattern[i][2])
                     if len(data) > 0:
-                        index = field.findText(data[i])
+                        index = field.findText(data[db_f])
                         if index == -1:
-                            field.addItem(data[i])
-                        index = field.findText(data[i])
+                            field.addItem(data[db_f])
+                        index = field.findText(data[db_f])
                         field.setCurrentIndex(index)
                     # test.append(field)
                 case "Check":
@@ -328,7 +519,7 @@ class RowForm(QDialog):
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     if len(data) > 0:
-                        if data[i] == "True":
+                        if data[db_f] == "True":
                             field.setChecked(True)
                     # test.append(field)
             
@@ -363,23 +554,30 @@ class RowForm(QDialog):
             return str(line.isChecked())
 
     def save(self):
-        rowData = []
+        rowData = tables[self.root.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
+        rowData['teacher'] = self.root.win.teach
         for i in range(self.layout.count()-2):  #Проходимся по всем полям формы. Минус два из-за меню снизу.
             val = self.data_format(self.layout.itemAt(i).layout().itemAt(1).widget())
             name = self.layout.itemAt(i).layout().itemAt(0).widget().text()
-            # print(val, name)
+            field = tables[self.root.name]['fields'][i][3]
+            # print(f"val: {val}, field: {field}")
             if self.root.flag == "NEW":
-                rowData.append(val)
+                rowData[field] = val
             else:
-                self.data[i] = val
-            if (name == "Тип" or name == "Название" or name == "Мероприятие" or name == "Дата" or name == "Предмет"):
+                self.data[field] = val
+            if (name == "Тип" or name == "Название" or name == "Мероприятие" or name == "Дата" or name == "Предмет" or name == "Класс"):
                 valab = QLabel(val)
                 valab.setStyleSheet('border: 1px solid black;')
                 if (name == "Дата"):
                     if self.root.flag == "EDIT":
                         self.root.curRow.itemAt(0).widget().setText(val)
                     else:
-                        self.root.curRow.insertWidget(0, valab, stretch=1)
+                        self.root.curRow.insertWidget(0, valab, stretch=2)
+                elif name == "Класс":
+                    if self.root.flag == "EDIT":
+                        self.root.curRow.itemAt(2).widget().setText(val)
+                    else:
+                        self.root.curRow.insertWidget(2, valab, stretch=1)
                 else:
                     if self.root.flag == "EDIT":
                         self.root.curRow.itemAt(1).widget().setText(val)
@@ -389,7 +587,7 @@ class RowForm(QDialog):
             self.root.data.append(rowData)
         # print()
         self.root.flag = "OK"
-        print(rowData)
+        # print(rowData)
         self.close()
 
     def abort(self):
@@ -400,12 +598,151 @@ class RowForm(QDialog):
         self.root.flag = "DEL"
         self.close()
 
-class Table(QWidget):
+class AuthDialog(QDialog):
+    def __init__(self, root):
+        self.root = root    #Ссылка на основное окно для взаимодействия
+        super().__init__()
+        self.user = ""
+        self.setWindowTitle(f'Авторизация')
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.layout = QVBoxLayout()
+        row = QHBoxLayout()
+        lbl = QLabel("Пользователь")
+        row.addWidget(lbl, stretch=2)
+        self.user = QLineEdit()
+        row.addWidget(self.user, stretch=3)
+        self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Пароль")
+        row.addWidget(lbl, stretch=2)
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.Password)
+        row.addWidget(self.password, stretch=3)
+        self.layout.addLayout(row)
+
+        self.layout.addWidget(QHLine())
+        menu = QHBoxLayout()
+        OK = QPushButton("ОК")
+        OK.clicked.connect(self.check)
+        abort = QPushButton("Закрыть")
+        abort.clicked.connect(self.cancel)
+        menu.addWidget(OK)
+        reg = QPushButton("Новый профиль")
+        reg.clicked.connect(self.reg)
+        menu.addWidget(abort)
+        menu.addWidget(reg)
+        self.layout.addLayout(menu)
+
+        self.setLayout(self.layout)
+
+    def check(self):
+        u = self.user.text()
+        p = self.password.text()
+        # print(u, p)
+        response = requests.get(f"http://127.0.0.1:8000/auth", params={"user": u, "pass": p})
+        print(response.text)
+        if response.text == "NOPE":
+            err = QMessageBox()
+            err.setText("Пароль или имя пользователя введено неверно.")
+            err.setInformativeText("Проверьте правильность пароля и имени и попробуйте ещё раз.")
+            err.exec_()
+        else:
+            self.root.flag = f"{u}, {response.text}"    #Флаг авторизации встаёт по схеме Имя-ID-Предмет
+            self.close()
+       
+    def cancel(self):
+        self.root.flag = "NVM"
+        self.close()
+
+    def reg(self):
+        self.flag = "NVM"    #Для передачи сигналов от вызываемого окна при его закрытии
+        r = RegDialog(self)
+        r.exec_()
+        print(self.flag)
+        if self.flag != "NVM":
+            self.root.flag = self.flag
+            self.close()
+
+class RegDialog(QDialog):
+    def __init__(self, root):
+        self.root = root    #Ссылка на родительское окно для взаимодействия
+        super().__init__()
+        self.setWindowTitle(f'Регистрация')
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.layout = QVBoxLayout()
+
+        row = QHBoxLayout()
+        lbl = QLabel("ФИО")
+        row.addWidget(lbl, stretch=1)
+        self.user = QLineEdit()
+        row.addWidget(self.user, stretch=3)
+        self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Предмет")
+        row.addWidget(lbl, stretch=1)
+        self.subj = QLineEdit()
+        row.addWidget(self.subj, stretch=3)
+        self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Категория")
+        row.addWidget(lbl, stretch=1)
+        self.category = QLineEdit()
+        row.addWidget(self.category, stretch=3)
+        self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Уровень доступа")
+        row.addWidget(lbl, stretch=1)
+        self.access = QComboBox()
+        self.access.addItems(['Учитель', 'Зав. кафедрой', 'Методист'])
+        row.addWidget(self.access, stretch=3)
+        self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Пароль")
+        row.addWidget(lbl, stretch=1)
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.Password)
+        row.addWidget(self.password, stretch=3)
+        self.layout.addLayout(row)
+
+        self.layout.addWidget(QHLine())
+        menu = QHBoxLayout()
+        OK = QPushButton("ОК")
+        OK.clicked.connect(self.save)
+        abort = QPushButton("Отмена")
+        abort.clicked.connect(self.abort)
+        menu.addWidget(OK)
+        menu.addWidget(abort)
+        self.layout.addLayout(menu)
+
+        self.setLayout(self.layout)
+
+    def save(self):
+        name = self.user.text()
+        subj = self.subj.text()
+        ctgr = self.category.text()
+        acss = self.access.currentText()
+        pwrd = self.password.text()
+        response = requests.get(f"http://127.0.0.1:8000/reg", params={"name": name, "pass": pwrd, "subj": subj, "category": ctgr, "access": acss})
+        if response.text == "AE":   #Сервер сообщает, что профиль с таким именем и предметом уже существует
+            err = QMessageBox()
+            err.setText("Регистрация невозможна.")
+            err.setInformativeText("Преподаватель данного предмета с таким именем уже зарегистрирован.")
+            err.exec_()
+        else:   #Если такого профиля нет, сервер вернёт ID учителя.
+            self.root.flag = f"{name}, {response.text}, {subj}" #Флаг авторизации встаёт по схеме Имя-ID-Предмет
+            self.close()
+
+    def abort(self):
+        self.root.flag = "NVM"
+        self.close()
+
+class Table(QWidget):   #Страница редактирования таблицы отчёта.
     def __init__(self, win, table_name: str):
-        self.name = table_name      #Сохраняет название для данных из словаря
-        self.win = win              #Ссылка на родительское окно
-        self.data = []              #Словарь со строками данных в таблице
-        self.draw()                 #Отрисовка интерфейса
+        self.name = table_name  #Сохраняет название для данных из словаря
+        self.win = win          #Ссылка на родительское окно
+        self.data = []          #Словарь со строками данных в таблице
+        self.delData = []       #Номера удалённых строк для удаления их в БД
+        self.draw()             #Отрисовка интерфейса
         
 
     def draw(self):
@@ -491,6 +828,11 @@ class Table(QWidget):
         self.rows.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.rows.setContentsMargins(0, 5, 10, 5)
         self.rows.setSizeConstraint(QLayout.SetMinAndMaxSize)
+
+        #Заполнение таблицы уже существующими данными
+        response = requests.get(f"http://127.0.0.1:8000/getData", params={"id": self.win.teach()})
+        lines = response.json()
+
         newRowBtn = QPushButton("Добавить строку")
         newRowBtn.clicked.connect(self.new_row)
         newRowBtn.setStyleSheet('border: 1px solid black;\
@@ -498,7 +840,6 @@ class Table(QWidget):
         newRowBtn.setMinimumHeight(50)
         newRowBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.rows.addWidget(newRowBtn)
-        # labels = [lab[0] for lab in tables[self.name]['fields']]
         scroller = QScrollArea()                #Виджет для прокрутки содержимого
         scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)   #Вертикальный скроллер всегда видимый (но не всегда активный)
         scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)#Горизонтальный скроллер не видим никогда.
@@ -507,17 +848,6 @@ class Table(QWidget):
         scroller.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         scroller.setWidget(tableWidget)
         table_box.addWidget(scroller)
-        
-        # menu = QVBoxLayout()
-        # btn_new = QPushButton("+")
-        # btn_new.clicked.connect(lambda: self.new_row())
-        # font = btn_new.font()
-        # font.setPointSize(18)
-        # font.setBold(True)
-        # btn_new.setFont(font)
-        # btn_new.setFixedSize(50, 50)
-        # menu.addWidget(btn_new)
-        # table_box.addLayout(menu)
 
         save = QWidget()
         BoxSave = QHBoxLayout(save)
@@ -552,15 +882,28 @@ class Table(QWidget):
         self.widget.setLayout(layout)
             
     def db_save(self):
-        print("СОХРАНЯЕМ СЛЕДУЮЩИЕ ДАННЫЕ:")
-        for i in range(len(self.data)):
-            print(f"{i}: {self.data[i]}")
-        print("Дело сделано!")
+        print(f"СОХРАНЯЕМ ТАБЛИЦУ {self.name}:")
+        if self.delData:
+            print(f"  -> Удаляем стёртые записи...")
+            for i in range(len(self.delData)):
+                response = requests.get(f"http://127.0.0.1:8000/unData", params={"id": self.delData.pop()})
+                print(f"    -> Удалено событие {response.text}")
 
-    def new_row(self, data=[]):
+        print(f"  -> Сохраняем локальные записи...")
+        for i in range(len(self.data)):
+            pack = self.data[i]
+            pack['teacher'] = self.win.teach   #ID текущего профиля
+            # print(pack)
+            response = requests.get(f"http://127.0.0.1:8000/upData", params=pack)
+            print(f"    -> Сохранена запись о мероприятии за {pack['date']}")
+        print("Дело сделано!")
+        for i in self.data:
+            print(i)
+
+    def new_row(self, data={}}):
         self.flag = "NEW"
         if not data:
-            data = []
+            data = {}
         newRow = QPushButton()
         newRow.setStyleSheet('border: 1px solid black;\
                                 background-color: #ffffff')
@@ -577,36 +920,28 @@ class Table(QWidget):
 
     def edit_row(self, index):
         self.flag = "EDIT"
-        self.curIndex = index
-        print(index, end=": ")
-        print(self.data[index])
         self.curRow = self.rows.itemAt(index).widget().children()[0]
 
         self.f = RowForm(self, self.data[index])
         self.f.exec()
 
         if self.flag == "DEL":
+            keys = {key:self.data[index][key] for key in ["teacher", "date", "name"]}
+            response = requests.get(f"http://127.0.0.1:8000/getIndex", params=keys)
+            print(response.text)
+            if int(response.text) >= 0:
+                self.delData.append(int(response.text))
             self.rows.itemAt(index).widget().deleteLater()
+            self.data.pop(index)
         ...
 
-    
-
-class Color(QWidget):
+class Color(QWidget):   #Цветной блок
     def __init__(self, color):
         super(Color, self).__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(color))
         self.setPalette(palette)
-
-class AuthDialog(QWidget):
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout()
-        self.label = QLabel("Another Window")
-        layout.addWidget(self.label)
-        self.setLayout(layout)
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -618,11 +953,20 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
 
         self.teach = 0
-        # self.w = AuthDialog()
-        # self.w.show()
-        self.pages = QStackedLayout()   
-        self.tables = []                    #создаём стак
-        self.draw()
+        self.flag = "NVM"
+        self.w = AuthDialog(self)
+        self.w.exec_()
+       
+        if self.flag == "NVM":
+            # print(self.flag)
+            sys.exit(0)
+        else:
+            self.teach = self.flag.split(", ")[1]
+            # print(self.teach)
+            self.setWindowTitle(f"PlanTable - {self.flag.split(', ')[0]}: {self.flag.split(', ')[2]}")
+            self.pages = QStackedLayout()   
+            self.tables = []                    #создаём стак
+            self.draw()
 
 #Авторизация
 

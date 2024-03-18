@@ -25,8 +25,11 @@ urlpatterns = [
     path(r'checkdb', views.testDB, name='test_db'),
     path(r'filldb', views.fillDB, name='fillt_db'),
 
-    path(r'auth', views.auth, name='authorisation'),
+    path(r'auth', views.autho, name='authorisation'),
+    path(r'reg', views.reg, name='registration'),
+    path(r'getIndex', views.getIndex, name='getting_index'),
     path(r'getData', views.getData, name='collecting_data'),
+    path(r'unData', views.unData, name='undoing_data'),
     path(r'upData', views.upData, name='updating_data'),
     path(r'docData', views.docData, name='generating_document')
 ]
