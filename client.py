@@ -16,8 +16,9 @@ while True:
         continue
     try:
         response = requests.get(f"http://127.0.0.1:8000/{url}", params={"param": prompt})
-        if url == "json" or url == "checkdb":
+        if url == "checkjson" or url == "checkdb":
             print("SERVER >", response.json())
+            print(response.json()['data'][0])
         else:
             print("SERVER >", response.text)
     except requests.exceptions.ConnectionError:

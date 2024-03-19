@@ -50,7 +50,7 @@ tables = {  #Шаблоны для генерации страниц запол�
             "table": 2,
             "form": "",
             "document": "",
-            "place": "Лицей №1"
+            "place": "Лицей N1"
         }
     },
     "t-03": {
@@ -441,8 +441,7 @@ class QHLine(QFrame):   #Горизонтальная полоска-разде�
 class RowForm(QDialog):
     def __init__(self, root, data:dict = {}):    #Делаем ссылку на родителя
         self.root = root    #Ссылка на основное окно для взаимодействия
-        self.data = data
-        # print(data)
+        print(data)
         super().__init__()
         self.setWindowTitle(f'Форма "{tables[root.name]["name"]}"')
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -450,6 +449,7 @@ class RowForm(QDialog):
         self.setMinimumHeight(600)
         pattern = tables[root.name]["fields"]
         self.layout = QVBoxLayout()
+
         for i in range(len(pattern)):
             row = QHBoxLayout()
             row.setAlignment(Qt.AlignTop | Qt.AlignLeft)
@@ -490,7 +490,11 @@ class RowForm(QDialog):
                     field.setMinimumHeight(30)
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     if len(data) > 0:
-                        field_data = data[db_f].split(".")
+                        field_data = data[db_f]
+                        if '-' in field_data:
+                            field_data = data[db_f].split("-")
+                        elif '.' in field_data:
+                            field_data = data[db_f].split(".")
                         field.setDate(QDate(int(field_data[2]),int(field_data[1]),int(field_data[0])))
                     # test.append(field)
                 case "List":
@@ -525,6 +529,19 @@ class RowForm(QDialog):
             
             row.addWidget(field, stretch=4)
             self.layout.addLayout(row)
+        if self.root.win.access != "Учитель" and not ('teacher' in data.keys()):
+            data['teacher'] = self.root.win.teach
+        if self.root.win.access != "Учитель" and not ('teacherName' in data.keys()):
+            data['teacherName'] = self.root.win.name
+        self.data = data
+
+        if self.root.win.access != "Учитель" and len(data) > 0:
+            row = QHBoxLayout()
+            row.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+            row.addWidget(QLabel("Преподаватель:"), stretch=1)
+            row.addWidget(QLabel(data['teacherName']), stretch=4)
+            self.layout.addLayout(row)
+        
         self.layout.addWidget(QHLine())
         menu = QHBoxLayout()
         save = QPushButton("ОК")
@@ -554,40 +571,47 @@ class RowForm(QDialog):
             return str(line.isChecked())
 
     def save(self):
-        rowData = tables[self.root.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
-        rowData['teacher'] = self.root.win.teach
-        for i in range(self.layout.count()-2):  #Проходимся по всем полям формы. Минус два из-за меню снизу.
-            val = self.data_format(self.layout.itemAt(i).layout().itemAt(1).widget())
-            name = self.layout.itemAt(i).layout().itemAt(0).widget().text()
-            field = tables[self.root.name]['fields'][i][3]
-            # print(f"val: {val}, field: {field}")
-            if self.root.flag == "NEW":
-                rowData[field] = val
+        if self.root.win.access != "Учитель" and int(self.data['teacher']) != int(self.root.win.teach):
+            print(f"НЕЛЬЗЯ МЕНЯТЬ ЧУЖИЕ ДАННЫЕ! ID ПОЛЬЗОВАТЕЛЯ: {self.root.win.teach}, ID АВТОРА: {self.data['teacher']}")
+            self.root.flag = "ABORT"
+        else:
+            rowData = tables[self.root.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
+            rowData['teacher'] = self.root.win.teach
+            if self.root.win.access != "Учитель":
+                add = 1
             else:
-                self.data[field] = val
-            if (name == "Тип" or name == "Название" or name == "Мероприятие" or name == "Дата" or name == "Предмет" or name == "Класс"):
-                valab = QLabel(val)
-                valab.setStyleSheet('border: 1px solid black;')
-                if (name == "Дата"):
-                    if self.root.flag == "EDIT":
-                        self.root.curRow.itemAt(0).widget().setText(val)
-                    else:
-                        self.root.curRow.insertWidget(0, valab, stretch=2)
-                elif name == "Класс":
-                    if self.root.flag == "EDIT":
-                        self.root.curRow.itemAt(2).widget().setText(val)
-                    else:
-                        self.root.curRow.insertWidget(2, valab, stretch=1)
+                add = 0
+            for i in range(self.layout.count()-2-add):  #Проходимся по всем полям формы. Минус два из-за меню снизу.
+                val = self.data_format(self.layout.itemAt(i).layout().itemAt(1).widget())
+                name = self.layout.itemAt(i).layout().itemAt(0).widget().text()
+                field = tables[self.root.name]['fields'][i][3]
+                if self.root.flag == "NEW":
+                    rowData[field] = val
                 else:
-                    if self.root.flag == "EDIT":
-                        self.root.curRow.itemAt(1).widget().setText(val)
+                    self.data[field] = val
+                if (name == "Тип" or name == "Название" or name == "Мероприятие" or name == "Дата" or name == "Предмет" or name == "Класс"):
+                    valab = QLabel(val)
+                    valab.setStyleSheet('border: 1px solid black;')
+                    if (name == "Дата"):
+                        if self.root.flag == "EDIT":
+                            self.root.curRow.itemAt(0).widget().setText(val)
+                        else:
+                            self.root.curRow.insertWidget(0, valab, stretch=2)
+                    elif name == "Класс":
+                        if self.root.flag == "EDIT":
+                            self.root.curRow.itemAt(2).widget().setText(val)
+                        else:
+                            self.root.curRow.insertWidget(2, valab, stretch=1)
                     else:
-                        self.root.curRow.insertWidget(1, valab, stretch=4)
-        if self.root.flag == "NEW":
-            self.root.data.append(rowData)
-        # print()
-        self.root.flag = "OK"
-        # print(rowData)
+                        if self.root.flag == "EDIT":
+                            self.root.curRow.itemAt(1).widget().setText(val)
+                        else:
+                            self.root.curRow.insertWidget(1, valab, stretch=4)
+            if self.root.flag == "NEW":
+                self.root.data.append(rowData)
+            
+        
+            self.root.flag = "OK"
         self.close()
 
     def abort(self):
@@ -640,7 +664,7 @@ class AuthDialog(QDialog):
         p = self.password.text()
         # print(u, p)
         response = requests.get(f"http://127.0.0.1:8000/auth", params={"user": u, "pass": p})
-        print(response.text)
+        # print(response.text)
         if response.text == "NOPE":
             err = QMessageBox()
             err.setText("Пароль или имя пользователя введено неверно.")
@@ -658,7 +682,7 @@ class AuthDialog(QDialog):
         self.flag = "NVM"    #Для передачи сигналов от вызываемого окна при его закрытии
         r = RegDialog(self)
         r.exec_()
-        print(self.flag)
+        # print(self.flag)
         if self.flag != "NVM":
             self.root.flag = self.flag
             self.close()
@@ -829,10 +853,6 @@ class Table(QWidget):   #Страница редактирования табл�
         self.rows.setContentsMargins(0, 5, 10, 5)
         self.rows.setSizeConstraint(QLayout.SetMinAndMaxSize)
 
-        #Заполнение таблицы уже существующими данными
-        response = requests.get(f"http://127.0.0.1:8000/getData", params={"id": self.win.teach()})
-        lines = response.json()
-
         newRowBtn = QPushButton("Добавить строку")
         newRowBtn.clicked.connect(self.new_row)
         newRowBtn.setStyleSheet('border: 1px solid black;\
@@ -840,6 +860,18 @@ class Table(QWidget):   #Страница редактирования табл�
         newRowBtn.setMinimumHeight(50)
         newRowBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.rows.addWidget(newRowBtn)
+
+        #Заполнение таблицы уже существующими данными
+        #В запросе прилагается ID учителя, таблица отчёта, где числятся данные и тип таблицы, чтобы знать, где в БД искать данные.
+        response = requests.get(f"http://127.0.0.1:8000/getData", params={"id": self.win.teach, "table": int(self.name[-2:]), "type": tables[self.name]['pattern']['type']})
+        lines = response.json()['data']
+        if len(lines) > 0:
+            print(f"ТАБЛИЦА {self.name}: ДАННЫЕ С СЕРВЕРА:")
+            for line in lines:
+                print(line)
+                self.new_row(line)
+            print()
+
         scroller = QScrollArea()                #Виджет для прокрутки содержимого
         scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)   #Вертикальный скроллер всегда видимый (но не всегда активный)
         scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)#Горизонтальный скроллер не видим никогда.
@@ -891,16 +923,20 @@ class Table(QWidget):   #Страница редактирования табл�
 
         print(f"  -> Сохраняем локальные записи...")
         for i in range(len(self.data)):
+            print(self.data[i]['teacher'], self.win.teach)
+            if int(self.data[i]['teacher']) != int(self.win.teach):
+                print("    ПРОПУСКАЕМ ЧУЖУЮ ЗАПИСЬ")
+                continue
             pack = self.data[i]
             pack['teacher'] = self.win.teach   #ID текущего профиля
             # print(pack)
             response = requests.get(f"http://127.0.0.1:8000/upData", params=pack)
             print(f"    -> Сохранена запись о мероприятии за {pack['date']}")
         print("Дело сделано!")
-        for i in self.data:
-            print(i)
+        # for i in self.data:
+        #     print(i)
 
-    def new_row(self, data={}}):
+    def new_row(self, data={}):
         self.flag = "NEW"
         if not data:
             data = {}
@@ -912,11 +948,43 @@ class Table(QWidget):   #Страница редактирования табл�
         newRow.clicked.connect(lambda: self.edit_row(self.rows.indexOf(newRow)))
         self.curRow = QHBoxLayout(newRow)
 
-        self.f = RowForm(self, data)
-        self.f.exec()
+        if len(data) == 0:
+            self.f = RowForm(self)
+            self.f.exec()
 
-        if self.flag == "OK":
+            if self.flag == "OK":
+                self.rows.insertWidget(self.rows.count()-1, newRow)
+        else:
+            # print(self.rows.count())
+            rowData = tables[self.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
+            rowData['teacher'] = self.win.teach
+            if self.win.access != "Учитель":
+                rowData['teacherName'] = data['teacherName']
+            if int(rowData['teacher']) != int(data['teacher']):
+                newRow.setStyleSheet('border: 1px solid gray;\
+                                background-color: #dddddd')
+            for key in rowData.keys():  #Проходим по всем полям данных для текущей таблицы
+                rowData[key] = data[key]
+                if (key == "date"):
+                        formDate = data[key].split("-")
+                        formDate = f"{formDate[2]}.{formDate[1]}.{formDate[0]}"
+                        rowData[key] = formDate
+        
+            valab = QLabel(rowData['date'])
+            valab.setStyleSheet('border: 1px solid black;')
+            self.curRow.insertWidget(0, valab, stretch=2)
+            valab = QLabel(rowData['name'])
+            valab.setStyleSheet('border: 1px solid black;')
+            self.curRow.insertWidget(1, valab, stretch=4)
+            if "studClass" in rowData.keys():
+                valab = QLabel(rowData['studClass'])
+                valab.setStyleSheet('border: 1px solid black;')
+                self.curRow.insertWidget(2, valab, stretch=1)
+               
+                
             self.rows.insertWidget(self.rows.count()-1, newRow)
+            self.data.append(rowData)
+            
 
     def edit_row(self, index):
         self.flag = "EDIT"
@@ -961,9 +1029,9 @@ class MainWindow(QMainWindow):
             # print(self.flag)
             sys.exit(0)
         else:
-            self.teach = self.flag.split(", ")[1]
-            # print(self.teach)
-            self.setWindowTitle(f"PlanTable - {self.flag.split(', ')[0]}: {self.flag.split(', ')[2]}")
+            self.name, self.teach, self.subj, self.access = self.flag.split(", ")
+            print(self.teach, self.access)
+            self.setWindowTitle(f"PlanTable - {self.flag.split(', ')[0]}: {self.flag.split(', ')[2]} ({self.access})")
             self.pages = QStackedLayout()   
             self.tables = []                    #создаём стак
             self.draw()

@@ -13,19 +13,20 @@ def testArgs(request):
 
 def testJson(request):
     print(f"RECIEVED {request.get_host()}: {request.GET}")
-    return JsonResponse({"data": [1, 2, 3, 4, 5], "data2": [2, 3, 4, 5, 6]})
+    return JsonResponse({"data": [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]})
 
 def testDB(request):
     print(f"RECIEVED {request.get_host()}: {request.GET}")
     # получаем все объекты
-    items = testTable.objects.all()
+    items = testTable.objects.all().values()
     #print(items.query)
     
     # здесь происходит выполнения запроса в БД
     response = []
     for item in items:
         #print(f"{item.id}.{item.name} - {item.age}")
-        response.append((item.id, item.name, item.age))
+        response.append(item)
+        print(item)
 
     return JsonResponse({"data": response})
 
@@ -42,6 +43,7 @@ def autho(request):  #При входе в клиент будет провер�
     print(f"RECIEVED {request.get_host()}: {request.GET}")
     name = request.GET['user']
     id = Teacher.objects.filter(name=name).values()[0]['id']
+    acc = Teacher.objects.filter(name = name).values()[0]['access']
     password = request.GET['pass']
     is_valid = auth.objects.filter(teacher=id, password=password).exists()
     # print(is_valid)
@@ -49,7 +51,7 @@ def autho(request):  #При входе в клиент будет провер�
         subj = Teacher.objects.filter(name=name).values()[0]['subject']
         # print(subj)
         print()
-        return HttpResponse(f"{id}, {subj}")    #Отправляем ID и предмет учителя на клиент
+        return HttpResponse(f"{id}, {subj}, {acc}")    #Отправляем ID и предмет учителя на клиент
     else:
         print()
         return HttpResponse("NOPE")
@@ -87,9 +89,38 @@ def getIndex(request):
 
 def getData(request): #В зависимости от пользователя будет выдавать его данные
     print(f"RECIEVED {request.get_host()}: {request.GET}")
+    tab = request.GET['table']
+    dataType = request.GET['type']
     Teach = Teacher.objects.get(id = request.GET['id'])
+    match Teach.access:         #Проверяем уровень доступа
+        case "Учитель":         #Достанет данные только по самому пользователю
+            events = Event.objects.filter(teacher = Teach, table = tab)
+        case "Зав. кафедрой":   #Достанет данные по кафедре
+            pass
+        case "Методист":        #Достанет все доступные данные
+            events = Event.objects.filter(table = tab)    
     
-    return JsonResponse()   #Отправлять будет словарь с данными
+    response = {"data": []}
+    for event in events:    #Проходим по каждому отобранному событию
+        t_id = event.teacher.id
+        data = {"teacherName": event.teacher.name, "teacher": t_id, "type": dataType, "if": event.id, "date": event.date, "name": event.name, "table": event.table}
+        match dataType:
+            case "open_class":
+                addData = OpenClass.objects.filter(event = event).values()[0]   #Код события - первичный ключ в остальных таблицах. Более одного варианта получить всё  равно невозможно.
+            case "organization":
+                addData = Organization.objects.filter(event = event).values()[0]
+            case "expertise":
+                addData = Expertise.objects.filter(event = event).values()[0]
+            case "course":
+                addData = Course.objects.filter(event = event).values()[0]
+            case "experience":
+                addData = Experience.objects.filter(event = event).values()[0]
+            case "student_work":
+                addData = StudentWork.objects.filter(event = event).values()[0]
+        data.update(addData)
+        response['data'].append(data)
+            
+    return JsonResponse(response)   #Отправлять будет словарь с данными
 
 def unData(request):
     print(f"RECIEVED {request.get_host()}: {request.GET}")
