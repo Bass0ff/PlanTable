@@ -14,10 +14,10 @@ from datetime import datetime
 server_host = "http://bass0ff.pythonanywhere.com/"
 # server_host = "http://127.0.0.1:8000/"
 
-tables = {  #Шаблоны для генерации страниц заполнения таблиц. Типы таблиц - oc, se, et, 
+tables = {
     "t-01": {
         'name': "Проведение открытых уроков, классных часов, предметных недель, других мероприятий",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), 'date'],
             ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика"), 'name'],
             ["Класс", "SText", (), 'studClass'],
@@ -25,8 +25,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Цель", "Text", (), "target"],
             ["Отметка", "Check", (), "result"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "open_class",    #open_class = открытый урок 
+        'pattern': {
+            "id": -1,
+            "type": "open_class",
             "teacher": "",
             "date": "",
             "name": "",
@@ -39,14 +40,15 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-02": {
         'name': "Участие в подготовке и проведении лицейских мероприятий",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "EList", ("Заседание Кафедры", "Педсовет", "Педагогическое чтение", "Конференция", "Олимпиада", "Конкурс", "Выставка", "Предметная неделя"), "name"],
             ["Форма участия", "EList", ("Очная", "Заочная", "Дистанционная"), "form"],
             ["Документ", "List", ("Протокол", "Выписка", "План", "Отзыв", "Приказ"), "document"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "organization",    #self_education = самообразование
+        'pattern': {
+            "id": -1,
+            "type": "organization",
             "teacher": "",
             "date": "",
             "name": "",
@@ -58,14 +60,15 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-03": {
         'name': "Запланированные мероприятия",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Мероприятие", "Text", (), "name"],
             ["Результат", "Text", (), "document"],
             ["Место проведения", "Text", (), "place"],
             ["Дата", "Date", (), "date"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "organization",    #self_education = самообразование
+        'pattern': {
+            "id": -1,
+            "type": "organization",
             "teacher": "",
             "date": "",
             "name": "",
@@ -77,14 +80,15 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-04": {
         'name': "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Название", "Text", (), "name"],
             ["Личное участие", "Text", (), "action"],
             ["Дата", "Date", (), "date"],
             ["Результат", "Text", (), "result"]
         ],  
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "expertise",    #ExperTise = экспертная деятельность
+        'pattern': {
+            "id": -1,
+            "type": "expertise",
             "teacher": "",
             "date": "",
             "name": "",
@@ -96,14 +100,15 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-05": {
         'name': "Экспертная Деятельность",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Вид деятельности", "List", ("судья", "эксперт", "жюри"), "action"],
             ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "expertise",    #ExperTise = экспертная деятельность
+        'pattern': {
+            "id": -1,
+            "type": "expertise",
             "teacher": "",
             "date": "",
             "name": "",
@@ -115,7 +120,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-06": {
         'name': "Обучение на курсах повышения квалификации, посещение опорных школ и др.",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Тема", "Text", (), "theme"],
             ["Учреждение", "Text", (), "place"],
@@ -123,8 +128,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Документ", "Text", (), "document"],
             ["Формат", "EList", ("очный", "дистанционный", "очный, с применением дистанционных технологий"), "form"]
         ],  
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "course",    #CouRse = прохождение курсов и пр.
+        'pattern': {
+            "id": -1,
+            "type": "course",
             "teacher": "",
             "date": "",
             "name": "Курс",
@@ -139,7 +145,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-07": {
         'name': "Участие в сертифицированные вебинарах, семинарах и др.",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Тема", "Text", (), "theme"],
             ["Организатор", "Text", (), "organizer"],
@@ -147,8 +153,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Часы", "Number", (0, 500), "length"],
             ["Документ", "Text", (), "document"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "course",    #CouRse = прохождение курсов и пр.
+        'pattern': {
+            "id": -1,
+            "type": "course",
             "teacher": "",
             "date": "",
             "name": "Курс",
@@ -163,7 +170,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-08": {
         'name': "Участие в конкурсах профессионального мастерства",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Уровень", "List", ("школьный", "муниципальный", "региональный", "всероссийский"), "level"],
@@ -173,8 +180,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Документ", "Text", (), "document"],
             ["Ссылка", "Text", (), "link"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "experience",    #ExperienCe = предоставление опыта
+        'pattern': {
+            "id": -1,
+            "type": "experience",
             "teacher": "",
             "date": "",
             "name": "",
@@ -191,7 +199,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-09": {
         'name': "Обобщение и представление опыта работы",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Форма участия", "List", ("очная", "заочная", "дистанционная"), "form"],
@@ -202,8 +210,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Орган", "Text", (), "place"],
             ["Ссылка", "Text", (), "link"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "experience",    #ExperienCe = предоставление опыта
+        'pattern': {
+            "id": -1,
+            "type": "experience",
             "teacher": "",
             "date": "",
             "name": "",
@@ -220,13 +229,14 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-10": {
         'name': "Участие в диагностике профессиональных дефицитов/предметных компетенций",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Результат", "Text", (), "result"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "expertise",    #ExperTise = экспертная деятельность
+        'pattern': {
+            "id": -1,
+            "type": "expertise",
             "teacher": "",
             "date": "",
             "name": "",
@@ -238,7 +248,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-11": {
         'name': "Участие во внешкольных мероприятий",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Тип", "EList", ("Школа Современного Педагога", "конференция", "семинар", "консультация", "стажировочная площадка", "урок коллег из другой школы"), "name"],
             ["Уровень", "List", ("отборочный", "заключительный", "дистанционный", "школьный", "муниципальный", "районный", "региональный", "всероссийский", "международный", "межмуниципальный", "межрегиональный"), "level"],
@@ -247,8 +257,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Тема", "Text", (), "theme"],
             ["Организатор", "Text", (), "organizer"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "expertise",    #CouRse = прохождение курсов и пр.
+        'pattern': {
+            "id": -1,
+            "type": "expertise",
             "teacher": "",
             "date": "",
             "name": "",
@@ -263,14 +274,15 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-12": {
         'name': "Посещение уроков, кл.часов, мероприятий у коллег в школе",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Предмет", "EList", ("Русский Язык", "Математика", "Алгебра", "Геометрия", "Литература", "Физика"), "name"],
             ["Класс", "SText", (), "studClass"],
             ["Тема", "Text", (), "theme"],
             ["Цель", "Text", (), "target"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
+        'pattern': {
+            "id": -1,
             "type": "open_class",
             "teacher": "",
             "date": "",
@@ -284,7 +296,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-13": {
         'name': "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Обучающийся", "Text", (), "student"],
@@ -293,8 +305,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Результат", "Text", (), "result"],
             ["Документ", "Text", (), "document"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "student_work",    #student_work = работа с учениками
+        'pattern': {
+            "id": -1,
+            "type": "student_work",
             "teacher": "",
             "date": "",
             "name": "",
@@ -309,7 +322,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-14": {
         'name': "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др.",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Обучающийся", "Text", (), "student"],
@@ -318,8 +331,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Результат", "Text", (), "result"],
             ["Документ", "Text", (), "document"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "student_work",    #student_work = работа с учениками
+        'pattern': {
+            "id": -1,
+            "type": "student_work",
             "teacher": "",
             "date": "",
             "name": "",
@@ -334,7 +348,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-15": {
         'name': "Участие обучающихся в соревнованиях профессиональных компетенций",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Дата", "Date", (), "date"],
             ["Название", "Text", (), "name"],
             ["Компетенция", "Text", (), "theme"],
@@ -344,8 +358,9 @@ tables = {  #Шаблоны для генерации страниц запол�
             ["Результат", "Text", (), "result"],
             ["Документ", "Text", (), "document"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "student_work",    #student_work = работа с учениками
+        'pattern': {
+            "id": -1,
+            "type": "student_work",
             "teacher": "",
             "date": "",
             "name": "",
@@ -360,13 +375,14 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-16": {
         'name': "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Название", "Text", (), "name"],
             ["Дата", "Date", (), "date"],
             ["Обучающийся", "Text", (), "student"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "student_work",    #student_work = работа с учениками
+        'pattern': {
+            "id": -1,
+            "type": "student_work",
             "teacher": "",
             "date": "",
             "name": "Курс",
@@ -381,13 +397,14 @@ tables = {  #Шаблоны для генерации страниц запол�
     },
     "t-17": {
         'name': "Участие в профильных сменах",
-        'fields': [ #0 - Название, 1 - Тип поля в форме, 2 - доп.данные, 3 - соотв. поле в БД
+        'fields': [
             ["Название", "Text", (), "name"],
             ["Дата", "Date", (), "date"],
             ["Обучающийся", "Text", (), "student"]
         ],
-        'pattern': {    #Словарь для отправки форматированных данных на сервер
-            "type": "student_work",    #student_work = работа с учениками
+        'pattern': {
+            "id": -1,
+            "type": "student_work",
             "teacher": "",
             "date": "",
             "name": "Курс",
@@ -402,7 +419,7 @@ tables = {  #Шаблоны для генерации страниц запол�
     }
 }
 
-docTables = [ #Шаблоны для заполнения документов
+docTables = [
     [   "Учебно-методическая и организационно-методическая работа",
         ["Проведение открытых уроков, классных часов, предметных недель, других мероприятий", ["Дата", "Предмет", "Класс", "тема", "Цель, для какой цели проводится", "Отметка о выполнении"], ["date", "name", "studClass", "theme", "target", "result"]],
         ["Участие в подготовке и проведении лицейских мероприятий", ["Дата", "Название мероприятия", "Форма участия", "Вид сданной документации"], ["date", "name", "form", "document"]],
@@ -429,23 +446,28 @@ docTables = [ #Шаблоны для заполнения документов
     ]
 ]
 
-def make_rows_bold(*rows):  #Функция для генерации документа - делает строку таблицы жирной (для заголовков, в основном)
+def make_rows_bold(*rows):
     for row in rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
                 for run in paragraph.runs:
                     run.font.bold = True
 
-class QHLine(QFrame):   #Горизонтальная полоска-разделитель.
+def make_row_bold(row: tuple):
+    for cell in row:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+
+class QHLine(QFrame):
     def __init__(self):
         super(QHLine, self).__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
 
 class RowForm(QDialog):
-    def __init__(self, root, data:dict = {}):    #Делаем ссылку на родителя
-        self.root = root    #Ссылка на основное окно для взаимодействия
-        # print(data)
+    def __init__(self, root, data:dict = {}):
+        self.root = root
         super().__init__()
         self.setWindowTitle(f'Форма "{tables[root.name]["name"]}"')
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -459,8 +481,8 @@ class RowForm(QDialog):
             row.setAlignment(Qt.AlignTop | Qt.AlignLeft)
             row.addWidget(QLabel(pattern[i][0]), stretch=1)
             field = 0
-            db_f = pattern[i][3]    #pattern[3] - Название поля в БД
-            match pattern[i][1]:    #pattern[1] - Тип поля в форме
+            db_f = pattern[i][3]
+            match pattern[i][1]:
                 case "Text":
                     field = QTextEdit()
                     field.setMaximumWidth(640)
@@ -469,10 +491,7 @@ class RowForm(QDialog):
                     try:
                         field.setText(data[db_f])
                     except KeyError:
-                        print("NO")
-                    # if len(data) > 0:
-                    #     field.setText(data[db_f])
-                    # test.append(field)
+                        pass
                 case "SText":
                     field = QLineEdit()
                     field.setMaximumWidth(50)
@@ -482,11 +501,10 @@ class RowForm(QDialog):
                     try:
                         field.setText(data[db_f])
                     except KeyError:
-                        print("NO")
-                    # test.append(field)
+                        pass
                 case "Number":
                     field = QSpinBox()
-                    field.setMinimum(pattern[i][2][0])  #pattern[2] - Доп.данные (поля списков или ограничитель для чисел)
+                    field.setMinimum(pattern[i][2][0])
                     field.setMaximum(pattern[i][2][1])
                     field.setMaximumWidth(50)
                     field.setMinimumHeight(30)
@@ -494,8 +512,7 @@ class RowForm(QDialog):
                     try:
                         field.setValue(data[db_f])
                     except KeyError:
-                        print("NO")
-                    # test.append(field)
+                        pass
                 case "Date":
                     field = QDateEdit()
                     field.setDate(QDate.currentDate())
@@ -509,8 +526,7 @@ class RowForm(QDialog):
                             field_data = data[db_f].split(".")
                         field.setDate(QDate(int(field_data[2]),int(field_data[1]),int(field_data[0])))
                     except KeyError:
-                        print("NO")                        
-                    # test.append(field)
+                        pass
                 case "List":
                     field = QComboBox()
                     field.addItems(pattern[i][2])
@@ -518,10 +534,9 @@ class RowForm(QDialog):
                     field.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
                     try:
                         index = field.findText(data[db_f])
-                        field.setCurrentIndex(index)    
+                        field.setCurrentIndex(index)
                     except KeyError:
-                        print("NO")                        
-                    # test.append(field)
+                        pass
                 case "EList":
                     field = QComboBox()
                     field.setEditable(True)
@@ -533,8 +548,7 @@ class RowForm(QDialog):
                         index = field.findText(data[db_f])
                         field.setCurrentIndex(index)  
                     except KeyError:
-                        print("NO")                        
-                    # test.append(field)
+                        pass
                 case "Check":
                     field = QCheckBox()
                     field.setFixedHeight(30)
@@ -544,10 +558,7 @@ class RowForm(QDialog):
                         if data[db_f] == "True":
                             field.setChecked(True)
                     except KeyError:
-                        print("NO")
-                        
-                    # test.append(field)
-            
+                        pass
             row.addWidget(field, stretch=4)
             self.layout.addLayout(row)
         if self.root.win.access != "Учитель" and not ('teacher' in data.keys()):
@@ -581,7 +592,6 @@ class RowForm(QDialog):
         a = type(line)
         if a == QDateEdit:
             return str(line.date().day()) + "." + str(line.date().month()) + "." + str(line.date().year())
-            # return str(line.date().year()) + "-" + str(line.date().month()) + "-" + str(line.date().day())
         elif a == QLineEdit:
             return line.text()
         elif a == QTextEdit:
@@ -598,13 +608,13 @@ class RowForm(QDialog):
             print(f"НЕЛЬЗЯ МЕНЯТЬ ЧУЖИЕ ДАННЫЕ! ID ПОЛЬЗОВАТЕЛЯ: {self.root.win.teach}, ID АВТОРА: {self.data['teacher']}")
             self.root.flag = "ABORT"
         else:
-            rowData = tables[self.root.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
+            rowData = tables[self.root.name]['pattern'].copy()
             rowData['teacher'] = self.root.win.teach
             if self.root.win.access != "Учитель":
                 add = 1
             else:
                 add = 0
-            for i in range(self.layout.count()-2-add):  #Проходимся по всем полям формы. Минус два из-за меню снизу.
+            for i in range(self.layout.count()-2-add):
                 val = self.data_format(self.layout.itemAt(i).layout().itemAt(1).widget())
                 name = self.layout.itemAt(i).layout().itemAt(0).widget().text()
                 field = tables[self.root.name]['fields'][i][3]
@@ -647,7 +657,7 @@ class RowForm(QDialog):
 
 class AuthDialog(QDialog):
     def __init__(self, root):
-        self.root = root    #Ссылка на основное окно для взаимодействия
+        self.root = root
         super().__init__()
         self.user = ""
         self.setWindowTitle(f'Авторизация')
@@ -673,28 +683,38 @@ class AuthDialog(QDialog):
         OK.clicked.connect(self.check)
         abort = QPushButton("Закрыть")
         abort.clicked.connect(self.cancel)
-        menu.addWidget(OK)
         reg = QPushButton("Новый профиль")
         reg.clicked.connect(self.reg)
+        ps = QPushButton("<O>")
+        ps.clicked.connect(self.togglePass)
+        
+        menu.addWidget(OK)
         menu.addWidget(abort)
         menu.addWidget(reg)
+        menu.addWidget(ps)
+
         self.layout.addLayout(menu)
 
         self.setLayout(self.layout)
 
+    def togglePass(self):
+        if self.password.echoMode() == QLineEdit.Password:
+            self.password.setEchoMode(QLineEdit.Normal)
+        else:
+            self.password.setEchoMode(QLineEdit.Password)
+
+
     def check(self):
         u = self.user.text()
         p = self.password.text()
-        # print(u, p)
         response = requests.get(server_host + "auth", params={"user": u, "pass": p})
-        # print(response.text)
         if response.text == "NO":
             err = QMessageBox()
             err.setText("Пароль или имя пользователя введено неверно.")
             err.setInformativeText("Проверьте правильность пароля и имени и попробуйте ещё раз.")
             err.exec_()
         else:
-            self.root.flag = f"{u}, {response.text}"    #Флаг авторизации встаёт по схеме Имя-ID-Предмет
+            self.root.flag = f"{u}, {response.text}"
             self.close()
        
     def cancel(self):
@@ -702,17 +722,16 @@ class AuthDialog(QDialog):
         self.close()
 
     def reg(self):
-        self.flag = "NVM"    #Для передачи сигналов от вызываемого окна при его закрытии
+        self.flag = "NVM"
         r = RegDialog(self)
         r.exec_()
-        # print(self.flag)
         if self.flag != "NVM":
             self.root.flag = self.flag
             self.close()
 
 class RegDialog(QDialog):
     def __init__(self, root):
-        self.root = root    #Ссылка на родительское окно для взаимодействия
+        self.root = root
         super().__init__()
         self.setWindowTitle(f'Регистрация')
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -759,6 +778,13 @@ class RegDialog(QDialog):
         self.password.setEchoMode(QLineEdit.Password)
         row.addWidget(self.password, stretch=3)
         self.layout.addLayout(row)
+        row = QHBoxLayout()
+        lbl = QLabel("Повтор пароля")
+        row.addWidget(lbl, stretch=1)
+        self.passrep = QLineEdit()
+        self.passrep.setEchoMode(QLineEdit.Password)
+        row.addWidget(self.passrep, stretch=3)
+        self.layout.addLayout(row)
 
         self.layout.addWidget(QHLine())
         menu = QHBoxLayout()
@@ -766,13 +792,33 @@ class RegDialog(QDialog):
         OK.clicked.connect(self.save)
         abort = QPushButton("Отмена")
         abort.clicked.connect(self.abort)
+        ps = QPushButton("<O>")
+        ps.clicked.connect(self.togglePass)
+        
         menu.addWidget(OK)
         menu.addWidget(abort)
+        menu.addWidget(ps)
+
         self.layout.addLayout(menu)
 
         self.setLayout(self.layout)
 
+    def togglePass(self):
+        if self.password.echoMode() == QLineEdit.Password:
+            self.password.setEchoMode(QLineEdit.Normal)
+            self.passrep.setEchoMode(QLineEdit.Normal)
+        else:
+            self.password.setEchoMode(QLineEdit.Password)
+            self.passrep.setEchoMode(QLineEdit.Password)
+
     def save(self):
+        if self.password.text() != self.passrep.text():
+            dlg = QMessageBox()
+            dlg.setWindowTitle("Ошибка")
+            dlg.setText("Введённый пароль не совпадает с полем подтверждения!")
+            dlg.exec_()
+            return 0
+
         name = self.user.text()
         subj = self.subj.text()
         ctgr = self.category.text()
@@ -780,29 +826,73 @@ class RegDialog(QDialog):
         pwrd = self.password.text()
         dprt = self.department.currentText()
         response = requests.get(server_host + "reg", params={"name": name, "pass": pwrd, "subj": subj, "category": ctgr, "access": acss, "department": dprt})
-        if response.text == "AE":   #Сервер сообщает, что профиль с таким именем и предметом уже существует
+        if response.text == "AE":
             err = QMessageBox()
             err.setText("Регистрация невозможна.")
             err.setInformativeText("Преподаватель данного предмета с таким именем уже зарегистрирован.")
             err.exec_()
-        else:   #Если такого профиля нет, сервер вернёт ID учителя.
-            self.root.flag = f"{name}, {response.text}, {subj}, {acss}" #Флаг авторизации встаёт по схеме Имя-ID-Предмет
+        else:
+            self.root.flag = f"{name}, {response.text}, {subj}, {acss}, {ctgr}, {dprt}"
             self.close()
 
     def abort(self):
         self.root.flag = "NVM"
         self.close()
 
-class Table(QWidget):   #Страница редактирования таблицы отчёта.
-    def __init__(self, win, table_name: str):
-        self.name = table_name  #Сохраняет название для данных из словаря
-        self.win = win          #Ссылка на родительское окно
-        self.data = []          #Словарь со строками данных в таблице
-        self.delData = []       #Номера удалённых строк для удаления их в БД
-        self.draw()             #Отрисовка интерфейса
+class DocDialog(QDialog):
+    def __init__(self, root):
+        self.root = root
+        super().__init__()
+        self.setWindowTitle(f'Регистрация')
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.layout = QVBoxLayout()
+
+        genBtn = QPushButton("Отчёт по школе")
+        genBtn.clicked.connect(lambda: self.done(3))
+        self.layout.addWidget(genBtn)
+        if self.root.access != "Методист" and self.root.access != "dev":
+            genBtn.setEnabled(False)
+        depBtn = QPushButton("Отчёт по кафедре")
+        depBtn.clicked.connect(lambda: self.done(2))
+        self.layout.addWidget(depBtn)
+        if self.root.access == "Учитель":
+            depBtn.setEnabled(False)
+        indBtn = QPushButton("Индивидуальный отчёт")
+        indBtn.clicked.connect(lambda: self.done(1))
+        self.layout.addWidget(indBtn)
+        canBtn = QPushButton("Отмена")
+        canBtn.clicked.connect(lambda: self.done(0))
+        self.layout.addWidget(canBtn)
+
+        self.setLayout(self.layout)
+
+class TableBtn(QPushButton):
+    def __init__(self, *a, **kw):
+        super(TableBtn, self).__init__(*a, **kw)
+    
+    def index(self, id: int):
+        self.id = id
+
+    def enterEvent(self, event):
+        self.old = self.styleSheet()
+        self.setStyleSheet('border: 1px solid blue;\
+                                background-color: #9999ff')
+        return super(TableBtn, self).enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.setStyleSheet(self.old)
+        return super(TableBtn, self).enterEvent(event)
+
+class Table(QWidget):
+    def __init__(self, win, table_name: str = ""):
+        self.name = table_name
+        self.win = win
+        self.data = []
+        self.delData = []
+        self.draw()
         
     def draw(self):
-        self.widget = QWidget()          #Основной виджет страницы
+        self.widget = QWidget()
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignLeft)
         
@@ -840,18 +930,17 @@ class Table(QWidget):   #Страница редактирования табл�
         Box_Left.addWidget(btn_menu)
 
         btn_menu = QPushButton('К созданию документа')
-        btn_menu.clicked.connect(lambda: self.win.button_pushed)
+        btn_menu.clicked.connect(self.win.docx_gen)
         Box_Left.addWidget(btn_menu)
 
         if self.name == "t-03":
             texts = QFormLayout()
+            self.selfed_id = -1
             self.theme = QLineEdit()
-            self.dateOne = QDateEdit()
-            self.dateTwo = QDateEdit()
+            self.stage = QLineEdit()
             self.method = QLineEdit()
             texts.addRow("Тема Самообразования", self.theme)
-            texts.addRow("Сроки работы над темой (год, этап)", self.dateOne)
-            texts.addRow("Сроки работы над темой (год, этап)", self.dateTwo)
+            texts.addRow("Сроки работы над темой (год, этап)", self.stage)
             texts.addRow("Образовательная технология/Метод обучения", self.method)
             texts.setAlignment(Qt.AlignBottom)
             Box_Right.addLayout(texts)
@@ -874,18 +963,18 @@ class Table(QWidget):   #Страница редактирования табл�
         prev.addWidget(self.btn_prev)
         Box_Right.addWidget(BoxPrev)
 
-        BoxTable = Color('#bababa')             #Фон для серого блока, где таблица лежит.
-        table_box = QVBoxLayout(BoxTable)       #Блок для хранения скроллера
+        BoxTable = Color('#bababa')
+        table_box = QVBoxLayout(BoxTable)
         table_box.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         
         tableWidget = QWidget()
         tableWidget.setMinimumSize(self.win.width()/5 * 2, self.win.height()/ 4)
-        self.rows = QVBoxLayout(tableWidget)         #Создадим внутри абстрактного виджета tableWidget блок для хранения строк. Сохраним его как параметр для дальнейшего доступа.
+        self.rows = QVBoxLayout(tableWidget)
         self.rows.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.rows.setContentsMargins(0, 5, 10, 5)
         self.rows.setSizeConstraint(QLayout.SetMinAndMaxSize)
 
-        newRowBtn = QPushButton("Добавить строку")
+        newRowBtn = TableBtn("Добавить строку")
         newRowBtn.clicked.connect(self.new_row)
         newRowBtn.setStyleSheet('border: 1px solid black;\
                                 background-color: #ffffff')
@@ -893,9 +982,16 @@ class Table(QWidget):   #Страница редактирования табл�
         newRowBtn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.rows.addWidget(newRowBtn)
 
-        #Заполнение таблицы уже существующими данными
-        #В запросе прилагается ID учителя, таблица отчёта, где числятся данные и тип таблицы, чтобы знать, где в БД искать данные.
-        response = requests.get(server_host + "getData", params={"id": self.win.teach, "table": int(self.name[-2:]), "type": tables[self.name]['pattern']['type']})
+        params={"id": self.win.teach, "table": int(self.name[-2:]), "type": tables[self.name]['pattern']['type']}
+        response = requests.get(server_host + "getData", params=params)
+
+        if self.name == "t-03":
+            if response.json()['selfEd'] != "None":
+                self.selfed_id = response.json()['selfEd']['id']
+                self.method.setText(response.json()['selfEd']['method'])
+                self.theme.setText(response.json()['selfEd']['theme'])
+                self.stage.setText(response.json()['selfEd']['stage'])
+
         lines = response.json()['data']
         if len(lines) > 0:
             print(f"ТАБЛИЦА {self.name}: ДАННЫЕ С СЕРВЕРА:")
@@ -904,11 +1000,11 @@ class Table(QWidget):   #Страница редактирования табл�
                 self.new_row(line)
             print()
 
-        scroller = QScrollArea()                #Виджет для прокрутки содержимого
-        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)   #Вертикальный скроллер всегда видимый (но не всегда активный)
-        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)#Горизонтальный скроллер не видим никогда.
+        scroller = QScrollArea()
+        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroller.setWidgetResizable(True)                           
-        scroller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #Заставляем скроллер растягиваться на всё доступное место.
+        scroller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         scroller.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         scroller.setWidget(tableWidget)
         table_box.addWidget(scroller)
@@ -944,38 +1040,73 @@ class Table(QWidget):   #Страница редактирования табл�
         layout.addWidget(left_widget, stretch=2)
         layout.addWidget(right_widget, stretch=3)       
         self.widget.setLayout(layout)
-            
+
     def db_save(self):
         print(f"СОХРАНЯЕМ ТАБЛИЦУ {self.name}:")
+        se_flag = ""
+        if self.name == "t-03":
+            print(f"  -> Сохраняем тему самообразования...")
+            response = requests.get(server_host + "upData", params = {"type": "selfEd", "id": self.selfed_id, "teacher": self.win.teach, "method": self.method.text(), "theme": self.theme.text(), "stage": self.stage.text()})
+            if response.json()['text'] == "Updated":
+                print(f"    -> Обновлена запись по самообразованию")
+                se_flag = "updated"
+            elif response.json()['text'] == "Created":
+                print(f"    -> Создана запись по новой теме самообразования")
+                self.selfed_id = int(response.json()['id'])
+                se_flag = "created"
+        dd_cnt = 0
         if self.delData:
             print(f"  -> Удаляем стёртые записи...")
             for i in range(len(self.delData)):
                 response = requests.get(server_host + "unData", params={"id": self.delData.pop()})
                 print(f"    -> Удалено событие {response.text}")
+                dd_cnt += 1
 
+        ad_cnt_n = 0
+        ad_cnt_o = 0
         print(f"  -> Сохраняем локальные записи...")
         for i in range(len(self.data)):
-            # print(self.data[i]['teacher'], self.win.teach)
             if int(self.data[i]['teacher']) != int(self.win.teach):
                 print("    ПРОПУСКАЕМ ЧУЖУЮ ЗАПИСЬ")
                 continue
             pack = self.data[i]
-            pack['teacher'] = self.win.teach   #ID текущего профиля
-            # if self.name == "t-06":
-            #     print(pack)
-            # else:
+            pack['teacher'] = self.win.teach
             response = requests.get(server_host + "upData", params=pack)
+            print(pack)
             if response.text == "Ok":
                 print(f"    -> Сохранена запись о мероприятии за {pack['date']}")
+                ad_cnt_o += 1
+            elif response.json()['text'] == "Newline":
+                print(f"    -> Сохранена запись о новом мероприятии за {pack['date']}")
+                self.data[i]["id"] = response.json()['id']
+                ad_cnt_n += 1
         print("Дело сделано!")
-        # for i in self.data:
-        #     print(i)
+
+        message = f'Сохранение данных завершено!'
+        if se_flag == "updated":
+            message += f"\nОбновлена запись по самообразованию"
+        elif se_flag == "created":
+            message += f"\nСоздана новая запись по самообразованию"
+
+        if dd_cnt > 0:
+            message += f"\nУдалено {dd_cnt} записей."
+
+        if ad_cnt_o > 0:
+            message += f"\nОбновлено {ad_cnt_o} записей."
+
+        if ad_cnt_n > 0:
+            message += f"\nДобавлено {ad_cnt_n} записей."
+
+        dlg = QMessageBox()
+        dlg.setWindowTitle("Сохранение")
+        dlg.setText(message)
+        dlg.exec_()
 
     def new_row(self, data={}):
         self.flag = "NEW"
         if not data:
             data = {}
-        newRow = QPushButton()
+        newRow = TableBtn()
         newRow.setStyleSheet('border: 1px solid black;\
                                 background-color: #ffffff')
         newRow.setMinimumHeight(50)
@@ -985,20 +1116,19 @@ class Table(QWidget):   #Страница редактирования табл�
 
         if len(data) == 0:
             self.f = RowForm(self)
-            self.f.exec()
+            self.f.exec_()
 
             if self.flag == "OK":
                 self.rows.insertWidget(self.rows.count()-1, newRow)
         else:
-            # print(self.rows.count())
-            rowData = tables[self.name]['pattern'].copy()  #Копия нужна, чтобы все поля не копировали последнее.
+            rowData = tables[self.name]['pattern'].copy()
             rowData['teacher'] = self.win.teach
             if self.win.access != "Учитель":
                 rowData['teacherName'] = data['teacherName']
             if int(rowData['teacher']) != int(data['teacher']):
                 newRow.setStyleSheet('border: 1px solid gray;\
                                 background-color: #dddddd')
-            for key in rowData.keys():  #Проходим по всем полям данных для текущей таблицы
+            for key in rowData.keys():
                 rowData[key] = data[key]
                 if (key == "date"):
                         formDate = data[key].split("-")
@@ -1021,6 +1151,8 @@ class Table(QWidget):   #Страница редактирования табл�
             self.data.append(rowData)
             
     def edit_row(self, index):
+        print(index, end="; ")
+        print(self.data[index]["id"])
         self.flag = "EDIT"
         self.curRow = self.rows.itemAt(index).widget().children()[0]
 
@@ -1028,22 +1160,151 @@ class Table(QWidget):   #Страница редактирования табл�
         self.f.exec()
 
         if self.flag == "DEL":
-            keys = {key:self.data[index][key] for key in ["teacher", "date", "name"]}
-            response = requests.get(server_host + "getIndex", params=keys)
-            print(response.text)
-            if int(response.text) >= 0:
-                self.delData.append(int(response.text))
+            if self.data[index]['id'] >= 0:
+                self.delData.append(self.data[index]['id'])
+            else:
+                print("Строка не была сохранена в БД. Удаление локальной записи.")
             self.rows.itemAt(index).widget().deleteLater()
             self.data.pop(index)
         ...
 
-class Color(QWidget):   #Цветной блок
+class Color(QWidget):
     def __init__(self, color):
         super(Color, self).__init__()
         self.setAutoFillBackground(True)
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(color))
         self.setPalette(palette)
+
+class PDataForm(QWidget):
+    def __init__(self, root, data: dict = {}):
+        super(PDataForm, self).__init__()
+        self.data = data
+        self.root = root
+        self.pattern = [
+            {'field': None, 'label': "ФИО", 'type': QLineEdit, 'data': "name", 'access': ["Учитель", "Зав. кафедрой", "Методист", "dev"]},
+            {'field': None, 'label': "Предмет", 'type': QLineEdit, 'data': "subject", 'access': ["Учитель", "Зав. кафедрой", "Методист", "dev"]},
+            {'field': None, 'label': "Категория", 'type': QLineEdit, 'data': "qualification", 'access': ["Учитель", "Зав. кафедрой", "Методист", "dev"]},
+            {'field': None, 'label': "Кафедра", 'type': QComboBox, 'data': "department", 'items': ['Кафедра точных наук', 'Кафедра естественных наук', 'Кафедра общественно-гуманитарных наук', 'Метод. объединение учителей физкультуры'], 'access': ["Учитель", "Зав. кафедрой", "Методист", "dev"]},
+            {'field': None, 'label': "Доступ", 'type': QComboBox, 'data': "access", 'items': ['Учитель', 'Зав. кафедрой', 'Методист'], 'access': ["Методист", "dev"]}
+        ]
+        self.fields = []
+        self.draw()
+        if self.data:
+            self.fill()
+
+    def draw(self):
+        layout = QVBoxLayout()
+        for i in self.pattern:
+            if self.root.access in i['access']:
+                row = QHBoxLayout()
+                lbl = QLabel(i['label'])
+                row.addWidget(lbl, stretch=1)
+                field = i['type']()
+                if type(field) == QComboBox:
+                    field.addItems(i['items'])
+                i['field'] = field
+                row.addWidget(field, stretch=3)
+                layout.addLayout(row)
+        layout.addWidget(QHLine())
+        SBtn = QPushButton("Сохранить")
+        SBtn.clicked.connect(self.updatePersona)
+        ToggleBtn = QPushButton("Отключить профиль")
+        ToggleBtn.clicked.connect(self.unTeach)
+        PassBtn = QPushButton("Пароль")
+        PassBtn.clicked.connect(self.seePass)
+        btns = QHBoxLayout()
+        btns.addWidget(SBtn, stretch=3)
+        btns.addWidget(ToggleBtn, stretch=3)
+        btns.addWidget(PassBtn, stretch=1)
+        layout.addLayout(btns)
+        self.setLayout(layout)
+    
+    def fill(self):
+        for i in self.pattern:
+            field = i['field']
+            if type(field) == QLineEdit:
+                print(i, ", ", self.data)
+                field.setText(self.data[i['data']])
+            elif type(field) == QComboBox:
+                index = field.findText(self.data[i['data']])
+                field.setCurrentIndex(index)
+
+    def update(self, data: dict):
+        self.data = data
+        self.fill()
+
+    def seePass(self):
+        try: self.data['id']
+        except KeyError:    #Если в словаре данных не находится индекс, прерываем функцию.
+            warning = QMessageBox(self)
+            warning.setWindowTitle("Ошибка")
+            warning.setText("Профиль преподавателя не выбран!")
+            warning.setIcon(QMessageBox.Warning)
+            warning.exec_()
+            return 0
+        response = requests.get(server_host + "tPass", params={'id': self.data['id']})
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Пароль")
+        msg.setText(f"Пароль пользователя {self.data['name']}: \n{response.json()['password']}")
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
+
+    def updatePersona(self):
+        try: self.data['id']
+        except KeyError:    #Если в словаре данных не находится индекс, прерываем функцию.
+            warning = QMessageBox(self)
+            warning.setWindowTitle("Ошибка")
+            warning.setText("Профиль преподавателя не выбран!")
+            warning.setIcon(QMessageBox.Warning)
+            warning.exec_()
+            return 0
+        vals = []
+        for i in self.pattern:
+            field = i['field']
+            if type(field) == QLineEdit:
+                vals.append(field.text())
+            elif type(field) == QComboBox:
+                vals.append(field.currentText())
+        pack = {'id': self.data['id'], 'name': vals[0], 'subj': vals[1], 'qual': vals[2], 'dep': vals[3], 'access': vals[4]} #имя, предмет, категория, кафедра, доступ
+        print(pack)
+        request = requests.get(server_host + "reTeach", params=pack)
+        print(request.text)
+        self.root.name = vals[0]
+        self.root.subj = vals[1]
+        self.root.qual = vals[2]
+        self.root.dep = vals[3]
+        self.root.setWindowTitle(f"PlanTable - {self.root.name}: {self.root.subj} ({self.root.access})")
+
+    def unTeach(self):
+        warning = QMessageBox(self)
+        warning.setWindowTitle("Отключение профиля")
+        warning.setText("Отключенный профиль не будет отображаться в отчёте, но может быть включён в любое время. \nПродолжить?")
+        warning.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        warning.setIcon(QMessageBox.Question)
+        button = warning.exec_()
+
+        if button == QMessageBox.Yes:
+            try: self.data['id']
+            except KeyError:    #Если в словаре данных не находится индекс, прерываем функцию.
+                warning = QMessageBox(self)
+                warning.setWindowTitle("Ошибка")
+                warning.setText("Профиль преподавателя не выбран!")
+                warning.setIcon(QMessageBox.Warning)
+                warning.exec_()
+                return 0
+            request = requests.get(server_host + "unTeach", params={"id": self.data['id']})
+            print(request.json()['value'])
+            if request.json()['value'] == True:
+                self.data['button'].setStyleSheet('border: 1px solid black;\
+                                background-color: #ffffff')
+            else:
+                self.data['button'].setStyleSheet('border: 1px solid black;\
+                                background-color: #ababab')
+
+        else:
+            print("No!")
+       
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -1060,34 +1321,91 @@ class MainWindow(QMainWindow):
         self.w.exec_()
        
         if self.flag == "NVM":
-            # print(self.flag)
             sys.exit(0)
         else:
             print(self.flag)
-            self.name, self.teach, self.subj, self.access, self.qual = self.flag.split(", ")
+            self.name, self.teach, self.subj, self.access, self.qual, self.dep = self.flag.split(", ")
             print(self.teach, self.access)
-            self.setWindowTitle(f"PlanTable - {self.flag.split(', ')[0]}: {self.flag.split(', ')[2]} ({self.access})")
+            self.setWindowTitle(f"PlanTable - {self.name}: {self.subj} ({self.access})")
             self.pages = QStackedLayout()   
-            self.tables = []                    #создаём стак
+            self.tables = []
             self.draw()
 
-    def draw(self):
-#Главная страница      
-        self.page_main = QWidget()                          #делаем виджет для первой страницы
-        PL_main = QVBoxLayout()                             #слой для страницы
-        btn_plan = QPushButton("Таблицы")                      #кнопка "создать план"
+    def draw(self): 
+        self.page_main = QWidget()
+        PL_main = QVBoxLayout()
+        btn_plan = QPushButton("Таблицы")
         btn_plan.setMinimumHeight(75)
         btn_plan.clicked.connect(lambda: self.goTo(self.page_plan))
         PL_main.addWidget(btn_plan)
-        btn_report = QPushButton("Документ")                   #кнопка "создать отчёт"
+        btn_report = QPushButton("Документ")
         btn_report.clicked.connect(self.docx_gen)
         btn_report.setMinimumHeight(75)
         PL_main.addWidget(btn_report)
+        btn_users = QPushButton("Данные преподавателя")
+        btn_users.clicked.connect(lambda: self.goTo(self.page_users))
+        btn_users.setMinimumHeight(75)
+        PL_main.addWidget(btn_users)
         PL_main.setAlignment(Qt.AlignVCenter)
-        self.page_main.setLayout(PL_main)                   #соединяем слой с виджетом
-        self.pages.addWidget(self.page_main)                #кладём виджет в стак
+        self.page_main.setLayout(PL_main)
+        self.pages.addWidget(self.page_main)
 
-#Меню составления плана
+        self.page_users = QWidget()
+        PL_users = QVBoxLayout()
+        header = QHBoxLayout()
+        backBtn = QPushButton("Назад")
+        backBtn.clicked.connect(lambda: self.goTo(self.page_main))
+        header.addWidget(backBtn, stretch=1)
+        header.addWidget(self.lbl("Данные преподавателя"), stretch=6)
+        PL_users.addLayout(header)
+        self.PData = PDataForm(self)
+        PL_users.addWidget(self.PData, stretch=1)
+
+        OData = Color("#bababa")
+        ODataLayout = QVBoxLayout()
+        OData.setLayout(ODataLayout)
+        table = QWidget()
+        tRows = QVBoxLayout(table)
+        response = requests.get(server_host + "tData", params={"id": self.teach})
+        self.teachers = response.json()['teachers']
+        for i in range(len(self.teachers)):
+            teacher = self.teachers[i]
+            btn = TableBtn()
+            btn.index(i)
+            if teacher['active'] == 1:
+                color = "#ffffff"
+            elif teacher['active'] == 0:
+                color = "#ababab"
+            btn.setStyleSheet(f'border: 1px solid black;\
+                            background-color: {color}')
+            btn.setMaximumHeight(50)
+            btn.setMinimumHeight(50)
+            btnLayout = QHBoxLayout(btn)
+            lbl = QLabel(teacher['name'])
+            lbl.setStyleSheet('border: 1px solid black;')
+            btnLayout.addWidget(lbl, stretch=3)
+            lbl = QLabel(teacher['department'])
+            lbl.setStyleSheet('border: 1px solid black;')
+            btnLayout.addWidget(lbl, stretch=5)
+            lbl = QLabel(teacher['subject'])
+            lbl.setStyleSheet('border: 1px solid black;')
+            btnLayout.addWidget(lbl, stretch=3)
+            btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            btn.clicked.connect(self.PDataUpdate)
+            tRows.addWidget(btn)
+        scroller = QScrollArea()
+        scroller.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroller.setWidgetResizable(True)                           
+        scroller.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        scroller.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        scroller.setWidget(table)
+        ODataLayout.addWidget(scroller)
+        PL_users.addWidget(OData, stretch=1)
+
+        self.page_users.setLayout(PL_users)
+        self.pages.addWidget(self.page_users)
+
         self.page_plan = QWidget()
         PL_plan = QVBoxLayout()
         PL_plan.addWidget(self.lbl("Разделы документа"))
@@ -1112,7 +1430,6 @@ class MainWindow(QMainWindow):
         self.page_plan.setLayout(PL_plan)
         self.pages.addWidget(self.page_plan)
 
-#План по Учебно-методической работе
         self.page_plan_p1 = QWidget()
         PL_plan_p1 = QVBoxLayout()
         PL_plan_p1.addWidget(self.lbl("Учебно-методическая Работа"))
@@ -1128,15 +1445,13 @@ class MainWindow(QMainWindow):
         self.page_plan_p1.setLayout(PL_plan_p1)
         self.pages.addWidget(self.page_plan_p1)
 
-#таблица "Проведение открытых уроков, классных часов, предметных недель, других мероприятий"
         self.tables.append(Table(self, "t-01"))
         self.pages.addWidget(self.tables[-1].widget)
+        self.tables[0].btn_prev.setEnabled(False)
         
-#таблица "Участие в подготовке и проведении лицейских мероприятий"
         self.tables.append(Table(self, "t-02"))
         self.pages.addWidget(self.tables[-1].widget)
 
-#План по Научно-методической работе
         self.page_plan_p2 = QWidget()
         PL_plan_p2 = QVBoxLayout()
         PL_plan_p2.addWidget(self.lbl("Научно-методическая Работа"))
@@ -1156,20 +1471,15 @@ class MainWindow(QMainWindow):
         self.page_plan_p2.setLayout(PL_plan_p2)
         self.pages.addWidget(self.page_plan_p2)
 
-#таблицы второго раздела
-    #Таблица "Запланированные мероприятия"
         self.tables.append(Table(self, "t-03"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Работа в рамках творческих групп, инновационной/стажировочной деятельности площадок"
         self.tables.append(Table(self, "t-04"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Экспертная Деятельность"
         self.tables.append(Table(self, "t-05"))
         self.pages.addWidget(self.tables[-1].widget)
 
-#План по Повышению Квалификации
         self.page_plan_p3 = QWidget()
         PL_plan_p3 = QVBoxLayout()
         PL_plan_p3.addWidget(self.lbl("Повышение Квалификации"))
@@ -1205,35 +1515,27 @@ class MainWindow(QMainWindow):
         self.page_plan_p3.setLayout(PL_plan_p3)
         self.pages.addWidget(self.page_plan_p3)
 
-    #Таблица "Обучение на курсах повышения квалификации, посещение опорных школ и др."
         self.tables.append(Table(self, "t-06"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Участие в сертифицированные вебинарах, семинарах и др."
         self.tables.append(Table(self, "t-07"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Участие в конкурсах профессионального мастерства"
         self.tables.append(Table(self, "t-08"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Обобщение и представление опыта работы"
         self.tables.append(Table(self, "t-09"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Участие в диагностике профессиональных дефицитов/предметных компетенций"
         self.tables.append(Table(self, "t-10"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Участие во внешкольных мероприятий"
         self.tables.append(Table(self, "t-11"))
         self.pages.addWidget(self.tables[-1].widget)
 
-    #Таблица "Посещение уроков, кл.часов, мероприятий у коллег в школе"
         self.tables.append(Table(self, "t-12"))
         self.pages.addWidget(self.tables[-1].widget)
 
-#План по Работе с обучающимися
         self.page_plan_p4 = QWidget()
         PL_plan_p4 = QVBoxLayout()
         PL_plan_p4.addWidget(self.lbl("Работа с обучающимися"))
@@ -1261,30 +1563,31 @@ class MainWindow(QMainWindow):
         self.page_plan_p4.setLayout(PL_plan_p4)
         self.pages.addWidget(self.page_plan_p4)
 
-        #Таблица "Участие обучающихся в конкурсных мероприятиях, входящих в перечень, \n утвержденный приказом Министертсва науки и высшего образования РФ"
         self.tables.append(Table(self, "t-13"))
         self.pages.addWidget(self.tables[-1].widget)
 
-        #Таблица "Участие обучающихся в других конкурсных мероприятиях, научно-практических конференциях, ШРД, ФНР и др."
         self.tables.append(Table(self, "t-14"))
         self.pages.addWidget(self.tables[-1].widget)
 
-        #Таблица "Участие обучающихся в соревнованиях профессиональных компетенций "
         self.tables.append(Table(self, "t-15"))
         self.pages.addWidget(self.tables[-1].widget)
 
-        #Таблица "Дополнительные общеразвивающие программы (ДОП) по подготовке обучющихся 9-11 классов к ВсОШ"
         self.tables.append(Table(self, "t-16"))
         self.pages.addWidget(self.tables[-1].widget)
 
-        #Таблица "Участие в профильных сменах"
         self.tables.append(Table(self, "t-17"))
-        self.tables[-1].Btn_next.setEnabled(False) #Таблица последняя, поэтому переход на следующую недоступен
+        self.tables[-1].Btn_next.setEnabled(False)
         self.pages.addWidget(self.tables[-1].widget)
 
         widget = QWidget()
         widget.setLayout(self.pages)
         self.setCentralWidget(widget)
+
+    def PDataUpdate(self):
+        sender = self.sender()
+        data = self.teachers[sender.id]
+        data['button'] = sender
+        self.PData.update(data)
 
     def goTo(self, page):
         self.pages.setCurrentWidget(page)
@@ -1308,7 +1611,7 @@ class MainWindow(QMainWindow):
         nav.addWidget(btn_nav_menu)
         btn_nav_doc = QPushButton("К созданию документа")
         btn_nav_doc.setMinimumHeight(75)
-        btn_nav_doc.clicked.connect(self.button_pushed)
+        btn_nav_doc.clicked.connect(self.docx_gen)
         nav.addWidget(btn_nav_doc)
         return nav
 
@@ -1339,6 +1642,22 @@ class MainWindow(QMainWindow):
         return str(tSurname) + " " + str(tName)[0] + "." + str(tPatronimic)[0] + "."
 
     def docx_gen(self):
+        dial = DocDialog(self)
+        res = dial.exec_()
+
+        if res == 0:
+            return 0
+        elif res == 2 or res == 3:
+            response = requests.get(server_host + "docData", params={"user": self.teach, "docType": res})
+            print(self.dep, response.json()["teachers"])
+            trs = response.json()['teachers']
+            selfEd_themes = response.json()['selfEd']
+            dep = self.dep
+            if "Кафедра" in dep:
+                dep = "Кафедры" + dep[7:]
+            elif "Метод." in dep:
+                dep = "Метод. объединения" + dep[18:]
+    
         print("Генерация документа начата...")
         doc = Document()
         self.style = doc.styles["Normal"]
@@ -1356,11 +1675,29 @@ class MainWindow(QMainWindow):
             years = (curdate.year, curdate.year+1)
         else:
             years = (curdate.year-1, curdate.year)
-        head = doc.add_paragraph()
-        head.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        hline = head.add_run('Индивидуальный план работы учителя МБОУ "Лицей №1" г.Братска')
-        hline.bold = True
-        hline.font.size = Pt(14)
+        if res == 1: 
+            head = doc.add_paragraph()
+            head.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            hline = head.add_run('Индивидуальный план работы учителя МБОУ "Лицей №1" г.Братска')
+            hline.bold = True
+            hline.font.size = Pt(14)
+        elif res == 2:
+            lines = ["Анализ работы", dep]
+            for line in lines:
+                head = doc.add_paragraph()
+                head.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                hline = head.add_run(line)
+                hline.bold = True
+                hline.font.size = Pt(14)
+        elif res == 3:
+            lines = ["Анализ работы", "Лицейских преподавателей (временный заголовок)"]
+            for line in lines:
+                head = doc.add_paragraph()
+                head.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                hline = head.add_run(line)
+                hline.bold = True
+                hline.font.size = Pt(14)
+        
 
         year = doc.add_paragraph()
         year.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1374,39 +1711,40 @@ class MainWindow(QMainWindow):
         a.font.size = Pt(14)
         year.add_run(" учебный год")
 
-        teachData = doc.add_paragraph()
-        teachData.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        t_text = self.initials(self.name)
-        if len(t_text) < 21:
-            diff = 21 - len(t_text)
-            pref = "_" * (diff//2)
-            posf = "_" * (diff - (diff//2))
-            t_text = pref + t_text + posf
-            print(t_text)
-        teach = teachData.add_run(t_text)
-        teach.font.size = Pt(12)
-        teach = teachData.add_run("     ")
-        teach.font.size = Pt(12)
-        t_text = self.subj
-        if len(t_text) < 27:
-            diff = 27 - len(t_text)
-            pref = "_" * (diff//2)
-            posf = "_" * (diff - (diff//2))
-            t_text = pref + t_text + posf
-            print(t_text)
-        teach = teachData.add_run(t_text)
-        teach.font.size = Pt(12)
-        teach = teachData.add_run(", квалификационная категория")
-        teach.font.size = Pt(12)
-        t_text = self.qual
-        if len(t_text) < 21:
-            diff = 21 - len(t_text)
-            pref = "_" * (diff//2)
-            posf = "_" * (diff - (diff//2))
-            t_text = pref + t_text + posf
-            print(t_text)
-        teach = teachData.add_run(t_text)
-        teach.font.size = Pt(12)
+        if res == 1:
+            teachData = doc.add_paragraph()
+            teachData.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            t_text = self.initials(self.name)
+            if len(t_text) < 21:
+                diff = 21 - len(t_text)
+                pref = "_" * (diff//2)
+                posf = "_" * (diff - (diff//2))
+                t_text = pref + t_text + posf
+                print(t_text)
+            teach = teachData.add_run(t_text)
+            teach.font.size = Pt(12)
+            teach = teachData.add_run("     ")
+            teach.font.size = Pt(12)
+            t_text = self.subj
+            if len(t_text) < 27:
+                diff = 27 - len(t_text)
+                pref = "_" * (diff//2)
+                posf = "_" * (diff - (diff//2))
+                t_text = pref + t_text + posf
+                print(t_text)
+            teach = teachData.add_run(t_text)
+            teach.font.size = Pt(12)
+            teach = teachData.add_run(", квалификационная категория")
+            teach.font.size = Pt(12)
+            t_text = self.qual
+            if len(t_text) < 21:
+                diff = 21 - len(t_text)
+                pref = "_" * (diff//2)
+                posf = "_" * (diff - (diff//2))
+                t_text = pref + t_text + posf
+                print(t_text)
+            teach = teachData.add_run(t_text)
+            teach.font.size = Pt(12)
 
         index = -1
         for block in docTables:
@@ -1416,48 +1754,133 @@ class MainWindow(QMainWindow):
             a.bold = True
             a.italic = True
             a.font.size = Pt(14)
-            for table in block[1:]:  #Проход по каждой таблице в блоке
+            for table in block[1:]:
                 index += 1
                 data = self.tables[index].data
                 print(self.tables[index].name, end=" ")
-                print(data)
-                # if index == 15:
-                #     m = max(len(data), len(self.tables[16].data))
-                #     for i in range(m):
-                #         if i < len(data) and i < len(self.tables[16].data):
-                #             data[i] += self.tables[16].data[i]
-                #         elif i < len(data) and i >= len(self.tables[16].data):
-                #             data[i] += ["" for index in range(9)]
-                #         elif i >= len(data) and i < len(self.tables[16].data):
-                #             data.insert(i ,["" for index in range(9)] + self.tables[16].data[i])
                 
-                p = doc.add_paragraph()
-                p.add_run(table[0]).bold = True
+                if index != 2:
+                    p = doc.add_paragraph()
+                    p.add_run(table[0]).bold = True
+                else:
+                    if res == 1:
+                        theme = doc.add_paragraph()
+                        htheme = theme.add_run("Тема самообразования: ")
+                        htheme.bold = True
+                        theme.add_run(self.tables[2].theme.text())
+
+                        stage = doc.add_paragraph()
+                        hstage = stage.add_run("Сроки работы над темой: ")
+                        hstage.bold = True
+                        stage.add_run(self.tables[2].stage.text())
+
+                        method = doc.add_paragraph()
+                        hmethod = method.add_run("Образовательная технология/Метод обучения: ")
+                        hmethod.bold = True
+                        method.add_run(self.tables[2].method.text())
+                    elif res == 2 or res == 3:
+                        themes = doc.add_table(rows = 1, cols = 5)
+                        themes.style = "Table Grid"
+                        headline = themes.rows[0].cells
+                        headline[0].text = "№"
+                        headlines = ["Преподаватель", "Тема", "Сроки", "Метод обучения"]
+                        for i in range(1, len(headline)):
+                            headline[i].text = headlines[i-1]
+                        make_rows_bold(themes.rows[0])
+                        for teacher_num in range(len(trs)):
+                            dataLine = [teacher_num + 1, trs[teacher_num][1]] + selfEd_themes[teacher_num]
+                            print(dataLine)
+                            row = themes.add_row().cells
+                            for cell_num in range(len(row)):
+                                print(type(row), type(dataLine))
+                                row[cell_num].text = str(dataLine[cell_num])
+
+                        col = themes.columns[0]
+                        col.width=Cm(1.5)
+
+                        doc.add_paragraph()
+
+
                 tab = doc.add_table(rows = 1, cols = len(table[1])+1)
                 tab.style = "Table Grid"
                 hedline = tab.rows[0].cells
                 hedline[0].text = "№"
                 for i in range(1, len(hedline)):
                     hedline[i].text = table[1][i-1]
+
+                col = tab.columns[0]
+                col.width=Cm(1.5)
+
                 make_rows_bold(tab.rows[0])
                 cnt = 1
-                for line in data:
-                    row = tab.add_row().cells
-                    row[0].text = str(cnt)
-                    cnt += 1
-                    for i in range(0, len(table[2])):
-                        num = table[2][i]
-                        if index == 15 and (num == "date1" or num == 9):
-                            row[i+1].text = f"{line[num]} - {line[num+1]}"
-                        else:
-                            row[i+1].text = line[num]
+                if res == 1:
+                    print("INDIVIDUAL")
+                    for line in data:
+                        if int(line["teacher"]) != int(self.teach):
+                            continue
+                        print(line)
+                        row = tab.add_row().cells
+                        row[0].text = str(cnt)
+                        cnt += 1
+                        for i in range(0, len(table[2])):
+                            num = table[2][i]
+                            if index == 15 and (num == "date1" or num == 9):
+                                row[i+1].text = f"{line[num]} - {line[num+1]}"
+                            else:
+                                if line[num] == True or line[num] == "True":
+                                    row[i+1].text = "+"
+                                elif line[num] == False or line[num] == "False":
+                                    row[i+1].text = "-"
+                                else:
+                                    row[i+1].text = line[num]
+                elif res == 2 or res == 3:
+                    if res == 2:
+                        print("DEPARTMENT")
+                    elif res == 3:
+                        print("GENERAL")
+                    for teacher in trs:
+                        print(teacher)
+                        row = tab.add_row().cells
+                        row[0].merge(row[-1])
+                        row[0].text = teacher[1]
+                        make_row_bold(row)
+                        for line in data:
+                            if int(line["teacher"]) != int(teacher[0]):
+                                continue
+                            print(line)
+                            row = tab.add_row().cells
+                            row[0].text = str(cnt)
+                            cnt += 1
+                            for i in range(0, len(table[2])):
+                                num = table[2][i]
+                                if index == 15 and (num == "date1" or num == 9):
+                                    row[i+1].text = f"{line[num]} - {line[num+1]}"
+                                else:
+                                    if line[num] == True or line[num] == "True":
+                                        row[i+1].text = "+"
+                                    elif line[num] == False or line[num] == "False":
+                                        row[i+1].text = "-"
+                                    elif num == "student":
+                                        row[i+1].text = str(line[num]) + ", " + str(line["studClass"])
+                                    else:
+                                        row[i+1].text = line[num]
                 if index == 15:
                     break
                 doc.add_paragraph()
         
 
-        doc.save(f"{self.name}_testDoc.docx")
-        print(f'Документ "{self.name}_test.docx" готов!')
+       
+        if res == 3:
+            doc.save(f'Lyceum_GenDoc.docx')
+            print(f'Документ "Lyceum_GenDoc.docx" готов!')
+        elif res == 2:
+            doc.save(f'{self.dep}_GenDoc.docx')
+            print(f'Документ "{self.dep}_GenDoc.docx" готов!')
+        elif res == 1:
+            doc.save(f"{self.name}_IndDoc.docx")
+            print(f'Документ "{self.name}_IndDoc.docx" готов!')
+        
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

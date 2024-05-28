@@ -19,17 +19,15 @@ from django.urls import path, re_path
 from server_test import views
 
 urlpatterns = [
-    path('', views.testServer, name='test_basic'),
-    path(r'check', views.testArgs, name='test_args'),
-    path(r'checkjson', views.testJson, name='test_json'),
-    path(r'checkdb', views.testDB, name='test_db'),
-    path(r'filldb', views.fillDB, name='fillt_db'),
-
+    path(r'', views.empty, name='index'),
     path(r'auth', views.autho, name='authorisation'),
     path(r'reg', views.reg, name='registration'),
-    path(r'getIndex', views.getIndex, name='getting_index'),
     path(r'getData', views.getData, name='collecting_data'),
     path(r'unData', views.unData, name='undoing_data'),
     path(r'upData', views.upData, name='updating_data'),
-    path(r'docData', views.docData, name='generating_document')
+    path(r'docData', views.docData, name='generating_document'),
+    path(r'tData', views.teachData, name='teacher_data'),
+    path(r'tPass', views.teachPass, name='teacher_password'),
+    path(r'unTeach', views.toggleTeach, name='toggling_teacher'),
+    path(r'reTeach', views.upTeach, name='update_teacher')
 ]

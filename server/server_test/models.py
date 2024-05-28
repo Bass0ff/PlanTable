@@ -8,7 +8,9 @@ class Teacher(models.Model):
     name = models.CharField(max_length=50)
     subject = models.CharField(max_length=30)
     qualification = models.CharField(max_length=30)
-    access = models.CharField(max_length=10)
+    access = models.CharField(max_length=15)
+    department = models.CharField(max_length=45)
+    active = models.BooleanField()
 
 class auth(models.Model):
     teacher = models.OneToOneField(Teacher, on_delete = models.CASCADE, primary_key = True)
@@ -70,7 +72,6 @@ class Organization(models.Model):
 
 class SelfEd(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete = models.CASCADE)
-    begin = models.DateField()
-    end = models.DateField()
+    stage = models.CharField(max_length=50)
     theme = models.TextField() 
     method = models.TextField()
